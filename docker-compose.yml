@@ -1,0 +1,18 @@
+version: '3.4'
+  
+networks:
+  web:
+    external:
+      name: web
+services:
+  cutting:
+    labels:
+      - 'traefik.backend=go-api'
+      - 'traefik.port=8040'
+      - 'traefik.frontend.rule=Host:api.valleycuttingsystems.net'
+    networks:
+      web:
+    image: wayimp/go-api
+    ports:
+      - 8040:8040
+      - 27019:27017
