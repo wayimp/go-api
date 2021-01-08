@@ -1,5 +1,17 @@
 const bookSchema = require('./book')
 
+const timelineSchema = {
+  type: 'object',
+  properties: {
+    action: {
+       type: 'string'
+    },
+    timestamp: {
+       type: 'date-time'
+    }
+  }
+}
+
 const orderSchema = {
   type: 'object',
   properties: {
@@ -7,7 +19,10 @@ const orderSchema = {
     archived: {
       type: 'boolean'
     },
-    date: {
+    created: {
+      type: 'date-time'
+    },
+    modified: {
       type: 'date-time'
     },
     customerName: {
@@ -41,6 +56,12 @@ const orderSchema = {
       type: 'array',
       items: {
         bookSchema
+      }
+    },
+    timeline: {
+      type: 'array',
+      items: {
+        timelineSchema
       }
     }
   },

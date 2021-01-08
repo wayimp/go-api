@@ -46,10 +46,10 @@ async function routes (fastify, options) {
     request,
     reply
   ) {
-
     const { body } = request
     body.archived = false
-    body.created = new Date()
+    body.created = new Date(moment().tz('America/Chicago'))
+    body.timeline = [{ action: 'Submitted', timestamp: new Date(moment().tz('America/Chicago')) }]
 
     const created = await ordersCollection.insertOne(body)
     created.id = created.ops[0]._id
@@ -62,7 +62,7 @@ async function routes (fastify, options) {
     reply
   ) {
     const { body } = request
-    body.modified = new Date()
+    body.modified = new Date(moment().tz('America/Chicago'))
     const id = body._id
     delete body._id
 
