@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "a387ed3e-740c-4f59-a8ce-2c957943a013",
+		"_postman_id": "f3fec47e-91c1-433c-be12-4cded6a9f0ca",
 		"name": "go-api",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -13,7 +13,10 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();",
-							"pm.globals.set(\"access_token\", jsonData.access_token);"
+							"pm.globals.set(\"access_token\", jsonData.access_token);",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -45,6 +48,19 @@
 		},
 		{
 			"name": "User GetAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [
@@ -74,7 +90,10 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();",
-							"pm.globals.set(\"insertedId\", jsonData.insertedId);"
+							"pm.globals.set(\"insertedId\", jsonData.insertedId);",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -112,6 +131,19 @@
 		},
 		{
 			"name": "User Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [
@@ -136,6 +168,19 @@
 		},
 		{
 			"name": "Order GetAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [
@@ -165,7 +210,10 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();",
-							"pm.globals.set(\"insertedId\", jsonData.insertedId);"
+							"pm.globals.set(\"insertedId\", jsonData.insertedId);",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -203,6 +251,19 @@
 		},
 		{
 			"name": "Order Get",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -221,6 +282,28 @@
 		},
 		{
 			"name": "Order Update",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "PATCH",
 				"header": [],
@@ -247,6 +330,19 @@
 		},
 		{
 			"name": "Order Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [
@@ -271,8 +367,22 @@
 		},
 		{
 			"name": "Book GetAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
+				"header": [],
 				"url": {
 					"raw": "{{url}}/books",
 					"host": [
@@ -293,7 +403,10 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();",
-							"pm.globals.set(\"insertedId\", jsonData.insertedId);"
+							"pm.globals.set(\"insertedId\", jsonData.insertedId);",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -310,7 +423,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"date\": \"2021-01-04\",\n  \"customerName\": \"test name\",\n  \"customerStreet\": \"test street\",\n  \"customerCity\": \"test city\",\n  \"customerState\": \"test state\",\n  \"customerZip\": \"test zip\",\n  \"customerPhone\": \"test phone\",\n  \"customerEmail\": \"test email\",\n  \"notes\": \"test notes\",\n  \"books\": [\n    {\n      \"description\": \"test book\",\n      \"quantityRequested\": 24,\n      \"quantityShipped\": 24\n    }\n  ]\n}",
+					"raw": "{\n  \"active\": true,\n  \"order\": 100,\n  \"title\": \"Test Reference Manual\",\n  \"image\": \"http://localhost:8044/images/athlete.jpg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -331,6 +444,19 @@
 		},
 		{
 			"name": "Book Get",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -349,12 +475,25 @@
 		},
 		{
 			"name": "Book Update",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "PATCH",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"_id\":\"{{insertedId}}\", \n    \"customerName\": \"test name changed\"\n}",
+					"raw": "{\n    \"_id\": \"{{insertedId}}\",\n    \"title\": \"Test Reference Manual Changed\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -375,6 +514,19 @@
 		},
 		{
 			"name": "Book Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [
@@ -391,6 +543,159 @@
 					],
 					"path": [
 						"books",
+						"{{insertedId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Workflow GetAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/workflows",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"workflows"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Workflow Create",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.globals.set(\"insertedId\", jsonData.insertedId);",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"order\": 100,\n  \"action\": \"Test Action\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/workflows",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"workflows"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Workflow Update",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"_id\":\"{{insertedId}}\", \n    \"action\": \"Test Action Changed\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/workflows",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"workflows"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Workflow Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url}}/workflows/{{insertedId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"workflows",
 						"{{insertedId}}"
 					]
 				}
