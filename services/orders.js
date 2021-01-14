@@ -49,7 +49,13 @@ async function routes (fastify, options) {
     const { body } = request
     body.archived = false
     body.created = new Date(moment().tz('America/Chicago'))
-    body.timeline = [{ action: 'Submitted', timestamp: new Date(moment().tz('America/Chicago')) }]
+    body.timeline = [
+      {
+        action: 'Submitted',
+        timestamp: new Date(moment().tz('America/Chicago')),
+        status: 1
+      }
+    ]
 
     const created = await ordersCollection.insertOne(body)
     created.id = created.ops[0]._id

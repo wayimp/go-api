@@ -14,11 +14,11 @@ const bookSchema = {
     image: {
       type: 'string'
     },
-    numberRequested: {
+    quantity: {
       type: 'number'
     },
-    numberShipped: {
-      type: 'number'
+    limited: {
+      type: 'boolean'
     }
   },
   required: ['title']

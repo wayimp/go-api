@@ -5,14 +5,14 @@ networks:
     external:
       name: web
 services:
-  cutting:
+  go-api:
     labels:
       - 'traefik.backend=go-api'
       - 'traefik.port=8040'
-      - 'traefik.frontend.rule=Host:api.valleycuttingsystems.net'
+      - 'traefik.frontend.rule=Host:api.lifereferencemanual.net'
     networks:
       web:
     image: wayimp/go-api
     ports:
       - 8040:8040
-      - 27019:27017
+      - 27021:27017

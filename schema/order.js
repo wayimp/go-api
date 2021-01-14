@@ -1,16 +1,5 @@
 const bookSchema = require('./book')
-
-const timelineSchema = {
-  type: 'object',
-  properties: {
-    action: {
-       type: 'string'
-    },
-    timestamp: {
-       type: 'date-time'
-    }
-  }
-}
+const workflowSchema = require('./workflow')
 
 const orderSchema = {
   type: 'object',
@@ -46,6 +35,9 @@ const orderSchema = {
     customerEmail: {
       type: 'string'
     },
+    instructions: {
+      type: 'string'
+    },
     notes: {
       type: 'string'
     },
@@ -61,7 +53,7 @@ const orderSchema = {
     timeline: {
       type: 'array',
       items: {
-        timelineSchema
+        workflowSchema
       }
     }
   },
