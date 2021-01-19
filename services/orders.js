@@ -40,6 +40,7 @@ const multiple = {
 
 async function routes (fastify, options) {
   const ordersCollection = fastify.mongo.db.collection('orders')
+  const settingsCollection = fastify.mongo.db.collection('settings')
   const jwt = fastify.jwt
 
   fastify.post('/orders', { schema: updateOne }, async function (
@@ -59,6 +60,35 @@ async function routes (fastify, options) {
 
     const created = await ordersCollection.insertOne(body)
     created.id = created.ops[0]._id
+
+    const customerEmail = created.ops[0].customerEmail
+    if (validate(customerEmail)) {
+      const settingsArray = await settingsCollection.find({}).toArray()
+      const settings = {}
+      settingsArray.map(setting => {
+        settings[setting.name] = setting.value
+      })
+
+      const link = `https://lifereferencemanual.net/order/${created.id}`
+      const order_confirmation_body = settings.order_confirmation_body.replace(
+        '[link]',
+        link
+      )
+      email(
+        customerEmail,
+        settings.order_confirmation_subject,
+        order_confirmation_body
+      )
+      const order_notification_body = settings.order_notification_body.replace(
+        '[link]',
+        link
+      )
+      email(
+        settings.notification_emails,
+        settings.order_notification_subject,
+        order_notification_body
+      )
+    }
 
     return created
   })
@@ -106,6 +136,14 @@ async function routes (fastify, options) {
 
       const findParams = {
         archived: false
+      }
+
+      if (query.showInactive) {
+        findParams.archived = true
+      }
+
+      if (query.search) {
+        findParams.customerName = { $regex: query.search, $options: 'i' }
       }
 
       const result = ordersCollection
