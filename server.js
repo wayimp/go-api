@@ -23,6 +23,7 @@ fastify.register(require('./services/books'))
 fastify.register(require('./services/orders'))
 fastify.register(require('./services/workflows'))
 fastify.register(require('./services/settings'))
+fastify.register(require('./services/quotes'))
 
 //fastify.register(require('./plugins/authenticate'))
 
