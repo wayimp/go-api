@@ -6,6 +6,8 @@ networks:
       name: web
 services:
   go-api:
+    env_file:
+      - .env
     labels:
       - 'traefik.backend=go-api'
       - 'traefik.port=8040'
