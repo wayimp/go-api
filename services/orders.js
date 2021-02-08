@@ -143,7 +143,15 @@ async function routes (fastify, options) {
       }
 
       if (query.search) {
-        findParams.customerName = { $regex: query.search, $options: 'i' }
+        findParams.$or = [
+          { customerName: { $regex: query.search, $options: 'i' } },
+          { customerStreet: { $regex: query.search, $options: 'i' } },
+          { customerCity: { $regex: query.search, $options: 'i' } },
+          { customerState: { $regex: query.search, $options: 'i' } },
+          { customerZip: { $regex: query.search, $options: 'i' } },
+          { customerPhone: { $regex: query.search, $options: 'i' } },
+          { customerEmail: { $regex: query.search, $options: 'i' } }
+        ]
       }
 
       const result = ordersCollection
