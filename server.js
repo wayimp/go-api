@@ -1,12 +1,15 @@
 const fastify = require('fastify')({
   ignoreTrailingSlash: true,
-  pluginTimeout:0,
+  pluginTimeout: 0,
   logger: true
 })
 
 const helmet = require('fastify-helmet')
 const auth = require('fastify-auth')
 const jwt = require('fastify-jwt')
+const fileUpload = require('fastify-file-upload')
+ 
+fastify.register(fileUpload)
 
 //const verifyJWT = require('./verifyJWT')
 //const verifyUser = require('./verifyUser')
@@ -14,7 +17,7 @@ const jwt = require('fastify-jwt')
 fastify.register(helmet)
 fastify.register(auth)
 fastify.register(jwt, { secret: 'JauLnD7PhEpvfGOQrZJq' })
-fastify.register(require('fastify-cors'), { 
+fastify.register(require('fastify-cors'), {
   // put your options here
 })
 fastify.register(require('./mongodb'))
@@ -24,6 +27,7 @@ fastify.register(require('./services/orders'))
 fastify.register(require('./services/workflows'))
 fastify.register(require('./services/settings'))
 fastify.register(require('./services/quotes'))
+fastify.register(require('./services/images'))
 
 //fastify.register(require('./plugins/authenticate'))
 
@@ -39,7 +43,6 @@ fastify.addHook("onRequest", async (request, reply) => {
   }
 })
 */
-
 
 const start = async () => {
   try {
