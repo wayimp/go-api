@@ -67,8 +67,10 @@ async function routes (fastify, options) {
         required: ['file-0']
       }
     },
-    handler: (request, reply) => {
+    handler: async (request, reply) => {
+      await request.jwtVerify()
       const file = request.body['file-0']
+      console.log('Uploading File: ' + file.name)
       uploadFile(file).then(
         reply.send({
           result: [

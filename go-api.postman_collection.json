@@ -366,7 +366,7 @@
 			"response": []
 		},
 		{
-			"name": "Book GetAll",
+			"name": "Block GetAll",
 			"event": [
 				{
 					"listen": "test",
@@ -384,12 +384,18 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/books",
+					"raw": "{{url}}/blocks?category=stories",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books"
+						"blocks"
+					],
+					"query": [
+						{
+							"key": "category",
+							"value": "stories"
+						}
 					]
 				}
 			},
@@ -733,6 +739,36 @@
 					],
 					"path": [
 						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Book GetAll Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/books",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"books"
 					]
 				}
 			},

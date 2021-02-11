@@ -82,8 +82,7 @@ async function routes (fastify, options) {
 
       const { user, query } = request
 
-      const findParams = {
-      }
+      const findParams = {}
 
       if (query.search) {
         findParams.name = { $regex: query.search, $options: 'i' }
@@ -93,6 +92,20 @@ async function routes (fastify, options) {
         .find(findParams)
         .sort([['name', 1]])
         .toArray()
+
+      return result
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/settingsPublic', multiple, async (request, reply) => {
+    try {
+      const findParams = {
+        public: true
+      }
+
+      const result = settingsCollection.find(findParams).toArray()
 
       return result
     } catch (err) {

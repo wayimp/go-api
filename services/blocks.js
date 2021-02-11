@@ -1,4 +1,4 @@
-const quoteSchema = require('../schema/quote')
+const blockSchema = require('../schema/block')
 const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
@@ -6,7 +6,7 @@ const { validate, email, slack } = require('../notify')
 
 const updateOne = {
   body: {
-    quoteSchema
+    blockSchema
   }
 }
 
@@ -19,29 +19,29 @@ const deleteOne = {
 const single = {
   schema: {
     response: {
-      200: { quoteSchema }
+      200: { blockSchema }
     }
   }
 }
 
 const multiple = {
   200: {
-    description: 'quotes',
+    description: 'blocks',
     type: 'array',
     items: {
       type: 'object',
       properties: {
-        result: { quoteSchema }
+        result: { blockSchema }
       }
     }
   }
 }
 
 async function routes (fastify, options) {
-  const quotesCollection = fastify.mongo.db.collection('quotes')
+  const blocksCollection = fastify.mongo.db.collection('blocks')
   const jwt = fastify.jwt
 
-  fastify.patch('/quotes', { schema: updateOne }, async function (
+  fastify.patch('/blocks', { schema: updateOne }, async function (
     request,
     reply
   ) {
@@ -52,7 +52,7 @@ async function routes (fastify, options) {
     const id = body._id
     delete body._id
 
-    const updated = await quotesCollection.updateOne(
+    const updated = await blocksCollection.updateOne(
       {
         _id: ObjectId(id)
       },
@@ -63,8 +63,8 @@ async function routes (fastify, options) {
     return updated
   })
 
-  fastify.get('/quotes/:id', multiple, async (request, reply) => {
-    const result = await quotesCollection.findOne({
+  fastify.get('/blocks/:id', multiple, async (request, reply) => {
+    const result = await blocksCollection.findOne({
       _id: ObjectId(request.params.id)
     })
 
@@ -78,11 +78,28 @@ async function routes (fastify, options) {
     return result
   })
 
-  fastify.get('/quotes', multiple, async (request, reply) => {
+  fastify.get('/blocks', multiple, async (request, reply) => {
     try {
-      const result = quotesCollection
-        .find({})
-        .sort([['order', 1]])
+      const { query } = request
+
+      const findParams = {
+        active: true
+      }
+
+      if (query.showInactive) {
+        delete findParams.active
+      }
+
+      if (query.category) {
+        findParams.category = query.category
+      }
+
+      const result = blocksCollection
+        .find(findParams)
+        .sort([
+          ['category', 1],
+          ['order', 1]
+        ])
         .toArray()
 
       return result
@@ -91,27 +108,27 @@ async function routes (fastify, options) {
     }
   })
 
-  fastify.post('/quotes', { schema: updateOne }, async function (
+  fastify.post('/blocks', { schema: updateOne }, async function (
     request,
     reply
   ) {
     await request.jwtVerify()
 
-    const created = await quotesCollection.insertOne(request.body)
+    const created = await blocksCollection.insertOne(request.body)
     created.id = created.ops[0]._id
 
     return created
   })
 
   fastify.delete(
-    '/quotes/:id',
+    '/blocks/:id',
     { schema: deleteOne },
     async (request, reply) => {
       const {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await quotesCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await blocksCollection.deleteOne({ _id: ObjectId(id) })
       return result
     }
   )
