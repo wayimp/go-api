@@ -1,4 +1,4 @@
-const bookSchema = require('./book')
+const productSchema = require('./product')
 const workflowSchema = require('./workflow')
 
 const orderSchema = {
@@ -44,10 +44,10 @@ const orderSchema = {
     donation: {
       type: 'number'
     },
-    books: {
+    products: {
       type: 'array',
       items: {
-        bookSchema
+        productSchema
       }
     },
     timeline: {

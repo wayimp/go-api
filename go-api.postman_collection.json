@@ -230,7 +230,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"date\": \"2021-01-04\",\n  \"customerName\": \"test name\",\n  \"customerStreet\": \"test street\",\n  \"customerCity\": \"test city\",\n  \"customerState\": \"test state\",\n  \"customerZip\": \"test zip\",\n  \"customerPhone\": \"test phone\",\n  \"customerEmail\": \"test email\",\n  \"notes\": \"test notes\",\n  \"books\": [\n    {\n      \"description\": \"test book\",\n      \"quantityRequested\": 24,\n      \"quantityShipped\": 24\n    }\n  ]\n}",
+					"raw": "{\n  \"date\": \"2021-01-04\",\n  \"customerName\": \"test name\",\n  \"customerStreet\": \"test street\",\n  \"customerCity\": \"test city\",\n  \"customerState\": \"test state\",\n  \"customerZip\": \"test zip\",\n  \"customerPhone\": \"test phone\",\n  \"customerEmail\": \"test email\",\n  \"notes\": \"test notes\",\n  \"products\": [\n    {\n      \"description\": \"test product\",\n      \"quantityRequested\": 24,\n      \"quantityShipped\": 24\n    }\n  ]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -366,43 +366,7 @@
 			"response": []
 		},
 		{
-			"name": "Block GetAll",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{url}}/blocks?category=stories",
-					"host": [
-						"{{url}}"
-					],
-					"path": [
-						"blocks"
-					],
-					"query": [
-						{
-							"key": "category",
-							"value": "stories"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Book Create",
+			"name": "Product Create",
 			"event": [
 				{
 					"listen": "test",
@@ -437,19 +401,19 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/books",
+					"raw": "{{url}}/products",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books"
+						"products"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Book Get",
+			"name": "Product GetAll",
 			"event": [
 				{
 					"listen": "test",
@@ -467,12 +431,42 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/books/{{insertedId}}",
+					"raw": "{{url}}/products",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Product Get",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/products/{{insertedId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"products",
 						"{{insertedId}}"
 					]
 				}
@@ -480,7 +474,7 @@
 			"response": []
 		},
 		{
-			"name": "Book Update",
+			"name": "Product Update",
 			"event": [
 				{
 					"listen": "test",
@@ -507,19 +501,19 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/books",
+					"raw": "{{url}}/products",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books"
+						"products"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Book Delete",
+			"name": "Product Delete",
 			"event": [
 				{
 					"listen": "test",
@@ -543,12 +537,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{url}}/books/{{insertedId}}",
+					"raw": "{{url}}/products/{{insertedId}}",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books",
+						"products",
 						"{{insertedId}}"
 					]
 				}
@@ -745,7 +739,7 @@
 			"response": []
 		},
 		{
-			"name": "Book GetAll Copy",
+			"name": "Block GetAll",
 			"event": [
 				{
 					"listen": "test",
@@ -763,13 +757,30 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/books",
+					"raw": "{{url}}/blocks?category=stories",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
-						"books"
+						"blocks"
+					],
+					"query": [
+						{
+							"key": "category",
+							"value": "stories"
+						}
 					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "QuickProducts Get Customers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
 				}
 			},
 			"response": []

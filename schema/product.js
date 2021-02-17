@@ -1,4 +1,4 @@
-const bookSchema = {
+const productSchema = {
   type: 'object',
   properties: {
     _id: { type: String, required: false },
@@ -7,6 +7,9 @@ const bookSchema = {
     },
     order: {
       type: 'number'
+    },
+    category: {
+      type: 'string'
     },
     title: {
       type: 'string'

@@ -48,6 +48,7 @@ async function routes (fastify, options) {
     await request.jwtVerify()
 
     const { body } = request
+    body.order = Number(body.order)
     body.modified = new Date(moment().tz('America/Chicago'))
     const id = body._id
     delete body._id
@@ -114,7 +115,10 @@ async function routes (fastify, options) {
   ) {
     await request.jwtVerify()
 
-    const created = await blocksCollection.insertOne(request.body)
+    const { body } = request
+    body.order = Number(body.order)
+
+    const created = await blocksCollection.insertOne(body)
     created.id = created.ops[0]._id
 
     return created

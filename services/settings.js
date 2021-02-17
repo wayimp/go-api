@@ -62,6 +62,8 @@ async function routes (fastify, options) {
   })
 
   fastify.get('/settings/:id', multiple, async (request, reply) => {
+    await request.jwtVerify()
+
     const result = await settingsCollection.findOne({
       _id: ObjectId(request.params.id)
     })
@@ -82,7 +84,7 @@ async function routes (fastify, options) {
 
       const { user, query } = request
 
-      const findParams = {}
+      const findParams = { hidden: null }
 
       if (query.search) {
         findParams.name = { $regex: query.search, $options: 'i' }
@@ -102,6 +104,7 @@ async function routes (fastify, options) {
   fastify.get('/settingsPublic', multiple, async (request, reply) => {
     try {
       const findParams = {
+        hidden: null,
         public: true
       }
 

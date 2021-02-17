@@ -1,11 +1,11 @@
-const bookSchema = require('../schema/book')
+const productSchema = require('../schema/product')
 const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 
 const updateOne = {
   body: {
-    bookSchema
+    productSchema
   }
 }
 
@@ -18,41 +18,41 @@ const deleteOne = {
 const single = {
   schema: {
     response: {
-      200: { bookSchema }
+      200: { productSchema }
     }
   }
 }
 
 const multiple = {
   200: {
-    description: 'books',
+    description: 'products',
     type: 'array',
     items: {
       type: 'object',
       properties: {
-        result: { bookSchema }
+        result: { productSchema }
       }
     }
   }
 }
 
 async function routes (fastify, options) {
-  const booksCollection = fastify.mongo.db.collection('books')
+  const productsCollection = fastify.mongo.db.collection('products')
   const jwt = fastify.jwt
 
-  fastify.post('/books', { schema: updateOne }, async function (
+  fastify.post('/products', { schema: updateOne }, async function (
     request,
     reply
   ) {
     await request.jwtVerify()
 
-    const created = await booksCollection.insertOne(request.body)
+    const created = await productsCollection.insertOne(request.body)
     created.id = created.ops[0]._id
 
     return created
   })
 
-  fastify.patch('/books', { schema: updateOne }, async function (
+  fastify.patch('/products', { schema: updateOne }, async function (
     request,
     reply
   ) {
@@ -60,7 +60,7 @@ async function routes (fastify, options) {
     const id = body._id
     delete body._id
 
-    const updated = await booksCollection.updateOne(
+    const updated = await productsCollection.updateOne(
       {
         _id: ObjectId(id)
       },
@@ -71,8 +71,8 @@ async function routes (fastify, options) {
     return updated
   })
 
-  fastify.get('/books/:id', multiple, async (request, reply) => {
-    const result = await booksCollection.findOne({
+  fastify.get('/products/:id', multiple, async (request, reply) => {
+    const result = await productsCollection.findOne({
       _id: ObjectId(request.params.id)
     })
 
@@ -86,7 +86,7 @@ async function routes (fastify, options) {
     return result
   })
 
-  fastify.get('/books', multiple, async (request, reply) => {
+  fastify.get('/products', multiple, async (request, reply) => {
     try {
       const { query } = request
 
@@ -96,7 +96,7 @@ async function routes (fastify, options) {
         delete findParams.active
       }
 
-      const result = booksCollection
+      const result = productsCollection
         .find(findParams)
         .sort({ order: 1 })
         .toArray()
@@ -108,14 +108,14 @@ async function routes (fastify, options) {
   })
 
   fastify.delete(
-    '/books/:id',
+    '/products/:id',
     { schema: deleteOne },
     async (request, reply) => {
       const {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await booksCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await productsCollection.deleteOne({ _id: ObjectId(id) })
       return result
     }
   )

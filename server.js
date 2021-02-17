@@ -22,12 +22,13 @@ fastify.register(require('fastify-cors'), {
 })
 fastify.register(require('./mongodb'))
 fastify.register(require('./services/users'))
-fastify.register(require('./services/books'))
+fastify.register(require('./services/products'))
 fastify.register(require('./services/orders'))
 fastify.register(require('./services/workflows'))
 fastify.register(require('./services/settings'))
 fastify.register(require('./services/blocks'))
 fastify.register(require('./services/images'))
+fastify.register(require('./services/customers'))
 
 //fastify.register(require('./plugins/authenticate'))
 
