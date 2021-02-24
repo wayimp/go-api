@@ -3,7 +3,7 @@ const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const { validate, email, slack } = require('../notify')
-const { pdfGen } = require('../pdf/pdfGen')
+// const { pdfGen } = require('../pdf/pdfGen')
 
 const updateOne = {
   body: {

@@ -29,6 +29,7 @@ fastify.register(require('./services/settings'))
 fastify.register(require('./services/blocks'))
 fastify.register(require('./services/images'))
 fastify.register(require('./services/customers'))
+fastify.register(require('./services/payments'))
 
 //fastify.register(require('./plugins/authenticate'))
 

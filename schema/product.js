@@ -22,6 +22,12 @@ const productSchema = {
     },
     limited: {
       type: 'boolean'
+    },
+    new: {
+      type: 'boolean'
+    },
+    constitution: {
+      type: 'boolean'
     }
   },
   required: ['title']
