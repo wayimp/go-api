@@ -80,6 +80,25 @@ async function routes (fastify, options) {
       const companyID = process.env.INTUIT_REALM_ID
       const url = process.env.INTUIT_URL
 
+      const getCustomers = async pageNo => {
+        oauthClient
+          .makeApiCall({
+            url: `https://${url}/v3/company/${companyID}/query?minorversion=14`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/text'
+            },
+            body: `Select * from Customer startposition ${pageNo * 1000 +
+              1} maxresults 1000`
+          })
+          .then(function (response) {
+            const customers = response.json.QueryResponse.Customer.map(
+              customer => (customer.FamilyName ? customer : null)
+            ).filter(noNull => noNull)
+            customersCollection.insertMany(customers)
+          })
+      }
+
       oauthClient
         .makeApiCall({
           url: `https://${url}/v3/company/${companyID}/query?minorversion=14`,
@@ -87,11 +106,15 @@ async function routes (fastify, options) {
           headers: {
             'Content-Type': 'application/text'
           },
-          body: 'Select * from Customer'
+          body: 'Select Count(*) from Customer'
         })
-        .then(function (response) {
-          customersCollection.insertMany(response.json.QueryResponse.Customer)
-          reply.send()
+        .then(async response => {
+          const { totalCount } = response.json.QueryResponse
+          const iterations = Math.floor(Number(totalCount) / 1000)
+          for (let i = 0; i <= iterations; i++) {
+            await getCustomers(i)
+          }
+          reply.send(totalCount)
         })
         .catch(function (e) {
           console.log('The error is ' + JSON.stringify(e))
