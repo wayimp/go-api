@@ -46,7 +46,10 @@ async function routes (fastify, options) {
   ) {
     await request.jwtVerify()
 
-    const created = await productsCollection.insertOne(request.body)
+    const { body } = request
+    body.order = Number(body.order)
+
+    const created = await productsCollection.insertOne(body)
     created.id = created.ops[0]._id
 
     return created
@@ -59,6 +62,7 @@ async function routes (fastify, options) {
     const { body } = request
     const id = body._id
     delete body._id
+    body.order = Number(body.order)
 
     const updated = await productsCollection.updateOne(
       {
