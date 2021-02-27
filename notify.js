@@ -1,5 +1,19 @@
 const axios = require('axios')
 const nodemailer = require('nodemailer')
+const dotenv = require('dotenv')
+
+let emailService, emailUser, emailPass
+if (process.env.emailService) {
+  emailService = process.env.EMAIL_SERVICE
+  emailUser = process.env.EMAIL_USER
+  emailPass = process.env.EMAIL_PASS
+} else {
+  // Load the config if it has not been done
+  const env = dotenv.config()
+  emailService = env.parsed.EMAIL_SERVICE
+  emailUser = env.parsed.EMAIL_USER
+  emailPass = env.parsed.EMAIL_PASS
+}
 
 module.exports = {
   validate: function (email) {
@@ -8,15 +22,15 @@ module.exports = {
   },
   email: function (to, subject, text) {
     var transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: emailService,
       auth: {
-        user: 'lifereferencemanualorders@gmail.com',
-        pass: 'Matthew28:19'
+        user: emailUser,
+        pass: emailPass
       }
     })
 
     var mailOptions = {
-      from: 'lifereferencemanualorders@gmail.com',
+      from: emailUser,
       to,
       subject,
       text

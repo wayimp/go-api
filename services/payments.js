@@ -23,36 +23,43 @@ async function routes (fastify, options) {
     res.send({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY })
   })
 
-  fastify.post('/payments', { schema: updateOne }, async function (
-    request,
-    reply
-  ) {
-    const { paymentMethodId, paymentIntentId, amount } = request.body
+  fastify.post('/donation', async (req, res) => {
+    const { amount, orderId, email } = req.body
 
-    try {
-      let intent
-      if (paymentMethodId) {
-        // Create new PaymentIntent with a PaymentMethod ID from the client.
-        intent = await stripe.paymentIntents.create({
-          amount,
-          currency: 'usd',
-          payment_method: paymentMethodId,
-          confirmation_method: 'manual',
-          confirm: true
-        })
-        // After create, if the PaymentIntent's status is succeeded, fulfill the order.
-      } else if (paymentIntentId) {
-        // Confirm the PaymentIntent to finalize payment after handling a required action
-        // on the client.
-        intent = await stripe.paymentIntents.confirm(paymentIntentId)
-        // After confirm, if the PaymentIntent's status is succeeded, fulfill the order.
-      }
-      reply.send(generateResponse(intent))
-    } catch (e) {
-      // Handle "hard declines" e.g. insufficient funds, expired card, etc
-      // See https://stripe.com/docs/declines/codes for more
-      reply.send({ error: e.message })
+    const sessionToCreate = {
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Go Therefore Ministries Donation'
+            },
+            unit_amount: Number(amount * 100)
+          },
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: orderId
+        ? `https://lifereferencemanual.net/order/${orderId}?sc=dr`
+        : 'https://lifereferencemanual.net',
+      cancel_url: orderId
+        ? `https://lifereferencemanual.net/order/${orderId}`
+        : 'https://lifereferencemanual.net'
     }
+
+    const expression = /(?!.*\.{2})^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i
+    const emailValid = expression.test(String(email).toLowerCase())
+    if (emailValid) {
+      sessionToCreate.customer_email = email
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionToCreate)
+
+    res.send({
+      sessionId: session.id
+    })
   })
 
   fastify.post('/subscriptions', { schema: updateOneSub }, async function (
@@ -77,8 +84,7 @@ async function routes (fastify, options) {
         // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
         // the actual Session ID is returned in the query parameter when your customer
         // is redirected to the success page.
-        success_url:
-          'https://lifereferencemanual.net?session_id={CHECKOUT_SESSION_ID}',
+        success_url: 'https://lifereferencemanual.net',
         cancel_url: 'https://lifereferencemanual.net'
       })
 
