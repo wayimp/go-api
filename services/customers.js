@@ -47,6 +47,45 @@ async function routes (fastify, options) {
   const settingsCollection = fastify.mongo.db.collection('settings')
   const customersCollection = fastify.mongo.db.collection('customers')
 
+  fastify.get('/getAuthUri', async (req, res) => {
+    const oauthClient = await getOAuthClient(settingsCollection)
+
+    const authUri = oauthClient.authorizeUri({
+      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
+      state: 'authorizeMe'
+    })
+    res.send({ authUri })
+  })
+
+  fastify.get('/callback', (req, res) => {
+    let parseRedirect = req.url
+
+    oauthClient
+      .createToken(parseRedirect)
+      .then(function (authResponse) {
+        const token = authResponse.getJson()
+        const { refresh_token } = token
+
+        const updated = settingsCollection.updateOne(
+          {
+            _id: ObjectId('602abb51f760989163928728')
+          },
+          {
+            $set: {
+              name: 'refresh_token',
+              hidden: true,
+              value: refresh_token
+            }
+          },
+          { upsert: true }
+        )
+      })
+      .catch(function (e) {
+        console.error('The error message is :' + e.originalMessage)
+        console.error(e.intuit_tid)
+      })
+  })
+
   fastify.get('/customers', multiple, async (request, reply) => {
     try {
       await request.jwtVerify()

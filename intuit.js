@@ -20,7 +20,7 @@ const getOAuthClient = async settingsCollection => {
     clientId,
     clientSecret,
     environment,
-    redirectUri: 'https://lifereferencemanual.net/callback'
+    redirectUri: 'https://api.lifereferencemanual.net/callback'
   })
 
   if (!oauthClient.isAccessTokenValid()) {
