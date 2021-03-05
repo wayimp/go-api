@@ -1,8 +1,42 @@
 const dotenv = require('dotenv')
 const { ObjectId } = require('mongodb')
-const OAuthClient = require('intuit-oauth');
+const OAuthClient = require('intuit-oauth')
 
-const getOAuthClient = async settingsCollection => {
+const getOAuthUri = async settingsCollection => {
+  let clientId, clientSecret, environment, authUri
+
+  if (process.env.INTUIT_CLIENT_ID) {
+    clientId = process.env.INTUIT_CLIENT_ID
+    clientSecret = process.env.INTUIT_CLIENT_SECRET
+    environment = process.env.INTUIT_ENVIRONMENT
+  } else {
+    // Load the config if it has not been done
+    const env = dotenv.config()
+    clientId = env.parsed.INTUIT_CLIENT_ID
+    clientSecret = env.parsed.INTUIT_CLIENT_SECRET
+    environment = env.parsed.INTUIT_ENVIRONMENT
+  }
+
+  try {
+    const oauthClient = new OAuthClient({
+      clientId,
+      clientSecret,
+      environment,
+      redirectUri: 'https://api.lifereferencemanual.net/callback'
+    })
+
+    authUri = oauthClient.authorizeUri({
+      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.Payment],
+      state: 'authorizeMe'
+    })
+  } catch (err) {
+    console.log(err)
+  }
+
+  return authUri
+}
+
+const getOAuthClientBare = async () => {
   let clientId, clientSecret, environment
   if (process.env.INTUIT_CLIENT_ID) {
     clientId = process.env.INTUIT_CLIENT_ID
@@ -23,23 +57,62 @@ const getOAuthClient = async settingsCollection => {
     redirectUri: 'https://api.lifereferencemanual.net/callback'
   })
 
+  return oauthClient
+}
+
+const getOAuthClient = async settingsCollection => {
+  let clientId, clientSecret, environment
+  if (process.env.INTUIT_CLIENT_ID) {
+    clientId = process.env.INTUIT_CLIENT_ID
+    clientSecret = process.env.INTUIT_CLIENT_SECRET
+    environment = process.env.INTUIT_ENVIRONMENT
+  } else {
+    // Load the config if it has not been done
+    const env = dotenv.config()
+    clientId = env.parsed.INTUIT_CLIENT_ID
+    clientSecret = env.parsed.INTUIT_CLIENT_SECRET
+    environment = env.parsed.INTUIT_ENVIRONMENT
+  }
+
+  const accessToken = await settingsCollection.findOne({
+    name: 'access_token'
+  })
+
+  console.log(accessToken.value)
+
+  const oauthClient = new OAuthClient({
+    clientId,
+    clientSecret,
+    environment,
+    redirectUri: 'https://api.lifereferencemanual.net/callback',
+    token: accessToken.value
+  })
+
   if (!oauthClient.isAccessTokenValid()) {
-    const tokenSetting = await settingsCollection.findOne({
+    const refreshToken = await settingsCollection.findOne({
       name: 'refresh_token'
     })
 
-    const authResponse = await oauthClient.refreshUsingToken(tokenSetting.value)
+    const authResponse = await oauthClient.refreshUsingToken(refreshToken.value)
 
-    console.log('authResponse:' + JSON.stringify(authResponse))
+    //console.log('authResponse:' + JSON.stringify(authResponse))
 
     if (authResponse && authResponse.refresh_token) {
-      console.log('refresh_token:' + authResponse.refresh_token)
-      tokenSetting.value = authResponse.refresh_token
+      // console.log('refresh_token:' + authResponse.refresh_token)
+      accessToken.value = authResponse.access_token
       await settingsCollection.updateOne(
         {
-          _id: ObjectId(tokenSetting._id)
+          _id: ObjectId(accessToken._id)
         },
-        { $set: tokenSetting }
+        { $set: accessToken }
+      )
+
+      refreshToken.value = authResponse.refresh_token
+      await settingsCollection.updateOne(
+        {
+          _id: ObjectId(refreshToken._id)
+        },
+        { $set: refreshToken }
       )
     }
   }
@@ -48,5 +121,6 @@ const getOAuthClient = async settingsCollection => {
 }
 
 module.exports = {
-  getOAuthClient
+  getOAuthClient,
+  getOAuthClientBare
 }

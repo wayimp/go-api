@@ -1,6 +1,6 @@
 const customerSchema = require('../schema/customer')
 const invoiceSchema = require('../schema/invoice')
-const { getOAuthClient } = require('../intuit')
+const { getOAuthClient, getOAuthClientBare } = require('../intuit')
 const OAuthClient = require('intuit-oauth')
 
 const updateOne = {
@@ -42,48 +42,85 @@ const multiple = {
   }
 }
 
+const makeid = length => {
+  var result = ''
+  var characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  var charactersLength = characters.length
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength))
+  }
+  return result
+}
+
 async function routes (fastify, options) {
   const jwt = fastify.jwt
   const settingsCollection = fastify.mongo.db.collection('settings')
   const customersCollection = fastify.mongo.db.collection('customers')
 
   fastify.get('/getAuthUri', async (req, res) => {
-    const oauthClient = await getOAuthClient(settingsCollection)
+    const oauthClient = await getOAuthClientBare()
+
+    const callbackId = makeid(10)
 
     const authUri = oauthClient.authorizeUri({
-      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
-      state: 'authorizeMe'
+      scope: [OAuthClient.scopes.Accounting],
+      state: callbackId
     })
+
     res.send({ authUri })
   })
 
-  fastify.get('/callback', (req, res) => {
-    let parseRedirect = req.url
+  fastify.get('/callback', async (req, res) => {
+    try {
+      const oauthClient = await getOAuthClientBare()
+      const { url } = req
 
-    oauthClient
-      .createToken(parseRedirect)
-      .then(function (authResponse) {
-        const token = authResponse.getJson()
-        const { refresh_token } = token
+      oauthClient
+        .createToken(url)
+        .then(function (authResponse) {
+          const { token } = authResponse
+          const { access_token, refresh_token } = token
 
-        const updated = settingsCollection.updateOne(
-          {
-            _id: ObjectId('602abb51f760989163928728')
-          },
-          {
-            $set: {
-              name: 'refresh_token',
-              hidden: true,
-              value: refresh_token
+          settingsCollection.insertOne({
+            name: 'token_error',
+            value: JSON.stringify(e)
+          })
+          
+          settingsCollection.updateOne(
+            {
+              name: 'access_token'
+            },
+            {
+              $set: {
+                value: access_token
+              }
             }
-          },
-          { upsert: true }
-        )
+          )
+
+          settingsCollection.updateOne(
+            {
+              name: 'refresh_token'
+            },
+            {
+              $set: {
+                value: refresh_token
+              }
+            }
+          )
+        })
+        .catch(function (e) {
+          settingsCollection.insertOne({
+            name: 'token_error',
+            value: JSON.stringify(e)
+          })
+        })
+    } catch (err) {
+      settingsCollection.insertOne({
+        name: 'routine_error',
+        value: JSON.stringify(err)
       })
-      .catch(function (e) {
-        console.error('The error message is :' + e.originalMessage)
-        console.error(e.intuit_tid)
-      })
+    }
   })
 
   fastify.get('/customers', multiple, async (request, reply) => {
@@ -112,14 +149,32 @@ async function routes (fastify, options) {
     try {
       await request.jwtVerify()
 
-      await customersCollection.deleteMany({})
-
       const oauthClient = await getOAuthClient(settingsCollection)
-
       const companyID = process.env.INTUIT_REALM_ID
       const url = process.env.INTUIT_URL
 
-      const getCustomers = async pageNo => {
+      if (oauthClient.isAccessTokenValid()) {
+        await customersCollection.deleteMany({})
+
+        const getCustomers = async pageNo => {
+          oauthClient
+            .makeApiCall({
+              url: `https://${url}/v3/company/${companyID}/query?minorversion=14`,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/text'
+              },
+              body: `Select * from Customer startposition ${pageNo * 1000 +
+                1} maxresults 1000`
+            })
+            .then(function (response) {
+              const customers = response.json.QueryResponse.Customer.map(
+                customer => (customer.FamilyName ? customer : null)
+              ).filter(noNull => noNull)
+              customersCollection.insertMany(customers)
+            })
+        }
+
         oauthClient
           .makeApiCall({
             url: `https://${url}/v3/company/${companyID}/query?minorversion=14`,
@@ -127,38 +182,21 @@ async function routes (fastify, options) {
             headers: {
               'Content-Type': 'application/text'
             },
-            body: `Select * from Customer startposition ${pageNo * 1000 +
-              1} maxresults 1000`
+            body: 'Select Count(*) from Customer'
           })
-          .then(function (response) {
-            const customers = response.json.QueryResponse.Customer.map(
-              customer => (customer.FamilyName ? customer : null)
-            ).filter(noNull => noNull)
-            customersCollection.insertMany(customers)
+          .then(async response => {
+            const { totalCount } = response.json.QueryResponse
+            const iterations = Math.floor(Number(totalCount) / 1000)
+            for (let i = 0; i <= iterations; i++) {
+              await getCustomers(i)
+            }
+            reply.send(totalCount)
+          })
+          .catch(function (e) {
+            console.log('The error is ' + JSON.stringify(e))
+            reply.send(e)
           })
       }
-
-      oauthClient
-        .makeApiCall({
-          url: `https://${url}/v3/company/${companyID}/query?minorversion=14`,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/text'
-          },
-          body: 'Select Count(*) from Customer'
-        })
-        .then(async response => {
-          const { totalCount } = response.json.QueryResponse
-          const iterations = Math.floor(Number(totalCount) / 1000)
-          for (let i = 0; i <= iterations; i++) {
-            await getCustomers(i)
-          }
-          reply.send(totalCount)
-        })
-        .catch(function (e) {
-          console.log('The error is ' + JSON.stringify(e))
-          reply.send(e)
-        })
     } catch (err) {
       reply.send(err)
     }
