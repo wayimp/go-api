@@ -28,6 +28,12 @@ const productSchema = {
     },
     constitution: {
       type: 'boolean'
+    },
+    qbId: {
+      type: 'string'
+    },
+    qbName: {
+      type: 'string'
     }
   },
   required: ['title']

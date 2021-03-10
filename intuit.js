@@ -78,8 +78,6 @@ const getOAuthClient = async settingsCollection => {
     name: 'access_token'
   })
 
-  console.log(accessToken.value)
-
   const oauthClient = new OAuthClient({
     clientId,
     clientSecret,

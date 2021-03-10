@@ -2,6 +2,7 @@ const customerSchema = require('../schema/customer')
 const invoiceSchema = require('../schema/invoice')
 const { getOAuthClient, getOAuthClientBare } = require('../intuit')
 const OAuthClient = require('intuit-oauth')
+const { validate } = require('../notify')
 
 const updateOne = {
   body: {
@@ -86,7 +87,7 @@ async function routes (fastify, options) {
             name: 'token_error',
             value: JSON.stringify(e)
           })
-          
+
           settingsCollection.updateOne(
             {
               name: 'access_token'
@@ -214,6 +215,11 @@ async function routes (fastify, options) {
       const companyID = process.env.INTUIT_REALM_ID
       const url = process.env.INTUIT_URL
 
+      const newCustomer = request.body
+      if (!validate(newCustomer.PrimaryEmailAddr.Address)) {
+        delete newCustomer.PrimaryEmailAddr
+      }
+
       oauthClient
         .makeApiCall({
           url: `https://${url}/v3/company/${companyID}/customer?minorversion=14`,
@@ -221,10 +227,13 @@ async function routes (fastify, options) {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: request.body
+          body: newCustomer
         })
         .then(function (response) {
-          reply.send(response.json.QueryResponse)
+          if (response && response.json && response.json.Customer) {
+            customersCollection.insertOne(response.json.Customer)
+          }
+          reply.send(JSON.stringify(response.json.Customer))
         })
         .catch(function (e) {
           console.log('The error is ' + JSON.stringify(e))
@@ -257,7 +266,7 @@ async function routes (fastify, options) {
           body: request.body
         })
         .then(function (response) {
-          reply.send(response.json.QueryResponse)
+          reply.send(response.json)
         })
         .catch(function (e) {
           console.log('The error is ' + JSON.stringify(e))
