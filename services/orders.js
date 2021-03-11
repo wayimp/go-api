@@ -3,6 +3,7 @@ const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const { validate, email, slack } = require('../notify')
+const { uploadBackup } = require('../spaces')
 // const { pdfGen } = require('../pdf/pdfGen')
 
 const updateOne = {
@@ -178,24 +179,17 @@ async function routes (fastify, options) {
     }
   )
 
-  fastify.get('/pdf/:id', multiple, async (request, reply) => {
-    const result = await ordersCollection.findOne({
-      _id: ObjectId(request.params.id)
-    })
+  fastify.get('/backup', async (req, res) => {
+    const backup = await ordersCollection
+      .find({
+        archived: false
+      })
+      .sort([['date', -1]])
+      .toArray()
 
-    if (!result) {
-      const err = new Error()
-      err.statusCode = 400
-      err.message = `id: ${id}.`
-      throw err
-    }
+    const log = `${backup.length} order records saved`
 
-    const pdf = pdfGen(result)
-
-    reply
-      .code(200)
-      .header('Content-Type', 'application/pdf')
-      .send(pdf)
+    uploadBackup(backup).then(res.send(log))
   })
 }
 

@@ -35,7 +35,7 @@ async function routes (fastify, options) {
             product_data: {
               name: 'Go Therefore Ministries Donation'
             },
-            unit_amount: Number(amount * 100)
+            unit_amount: amount
           },
           quantity: 1
         }

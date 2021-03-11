@@ -1,5 +1,6 @@
 const dotenv = require('dotenv')
 const AWS = require('aws-sdk')
+const moment = require('moment')
 
 let endpoint,
   bucket,
@@ -67,7 +68,27 @@ const uploadFile = file => {
   })
 }
 
+const uploadBackup = backup => {
+  return new Promise(async (resolve, reject) => {
+    const fileName = new moment().format('YY-MM-DD') + '.json'
+
+    var params = {
+      Body: JSON.stringify(backup),
+      Bucket: bucket,
+      Key: `backup/${fileName}`,
+      ACL: 'private'
+    }
+    s3.putObject(params, function (err, data) {
+      if (err) {
+        return reject(err)
+      }
+      resolve()
+    })
+  })
+}
+
 module.exports = {
   getFileList,
-  uploadFile
+  uploadFile,
+  uploadBackup
 }
