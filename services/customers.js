@@ -77,45 +77,32 @@ async function routes (fastify, options) {
       const oauthClient = await getOAuthClientBare()
       const { url } = req
 
-      oauthClient
-        .createToken(url)
-        .then(function (authResponse) {
-          const { token } = authResponse
-          const { access_token, refresh_token } = token
+      oauthClient.createToken(url).then(function (authResponse) {
+        const { token } = authResponse
+        const { access_token, refresh_token } = token
 
-          settingsCollection.insertOne({
-            name: 'token_error',
-            value: JSON.stringify(e)
-          })
-
-          settingsCollection.updateOne(
-            {
-              name: 'access_token'
-            },
-            {
-              $set: {
-                value: access_token
-              }
+        settingsCollection.updateOne(
+          {
+            name: 'access_token'
+          },
+          {
+            $set: {
+              value: access_token
             }
-          )
+          }
+        )
 
-          settingsCollection.updateOne(
-            {
-              name: 'refresh_token'
-            },
-            {
-              $set: {
-                value: refresh_token
-              }
+        settingsCollection.updateOne(
+          {
+            name: 'refresh_token'
+          },
+          {
+            $set: {
+              value: refresh_token
             }
-          )
-        })
-        .catch(function (e) {
-          settingsCollection.insertOne({
-            name: 'token_error',
-            value: JSON.stringify(e)
-          })
-        })
+          }
+        )
+      })
     } catch (err) {
       settingsCollection.insertOne({
         name: 'routine_error',
