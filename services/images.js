@@ -42,11 +42,11 @@ async function routes (fastify, options) {
 
   fastify.get('/images', multiple, async (request, reply) => {
     try {
-      const directory = 'go/'
+      const directory = 'up/'
       const fileList = await getFileList(directory)
       const result = fileList.slice(1).map((file, fi) => {
         return {
-          src: `https://files.lifereferencemanual.net/${file}`
+          src: `https://tanque.nyc3.digitaloceanspaces.com/${file}`
         }
       })
 

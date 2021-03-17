@@ -22,7 +22,7 @@ const getOAuthUri = async settingsCollection => {
       clientId,
       clientSecret,
       environment,
-      redirectUri: 'https://api.lifereferencemanual.net/callback'
+      redirectUri: 'https://api.gothereforeministries.org/callback'
     })
 
     authUri = oauthClient.authorizeUri({
@@ -54,7 +54,7 @@ const getOAuthClientBare = async () => {
     clientId,
     clientSecret,
     environment,
-    redirectUri: 'https://api.lifereferencemanual.net/callback'
+    redirectUri: 'https://api.gothereforeministries.org/callback'
   })
 
   return oauthClient
@@ -82,7 +82,7 @@ const getOAuthClient = async settingsCollection => {
     clientId,
     clientSecret,
     environment,
-    redirectUri: 'https://api.lifereferencemanual.net/callback',
+    redirectUri: 'https://api.gothereforeministries.org/callback',
     token: accessToken.value
   })
 

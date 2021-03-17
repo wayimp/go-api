@@ -11,7 +11,7 @@ services:
     labels:
       - 'traefik.backend=go-api'
       - 'traefik.port=8041'
-      - 'traefik.frontend.rule=Host:api.lifereferencemanual.net'
+      - 'traefik.frontend.rule=Host:api.gothereforeministries.org'
     networks:
       web:
     image: wayimp/go-api

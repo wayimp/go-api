@@ -70,7 +70,7 @@ async function routes (fastify, options) {
         settings[setting.name] = setting.value
       })
 
-      const link = `https://lifereferencemanual.net/order/${created.id}`
+      const link = `https://gothereforeministries.org/order/${created.id}`
       const order_confirmation_body = settings.order_confirmation_body.replace(
         '[link]',
         link
