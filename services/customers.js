@@ -1,5 +1,4 @@
 const customerSchema = require('../schema/customer')
-const invoiceSchema = require('../schema/invoice')
 const { getOAuthClient, getOAuthClientBare } = require('../intuit')
 const OAuthClient = require('intuit-oauth')
 const { validate } = require('../notify')
@@ -7,12 +6,6 @@ const { validate } = require('../notify')
 const updateOne = {
   body: {
     customerSchema
-  }
-}
-
-const updateInvoice = {
-  body: {
-    invoiceSchema
   }
 }
 
@@ -221,39 +214,6 @@ async function routes (fastify, options) {
             customersCollection.insertOne(response.json.Customer)
           }
           reply.send(JSON.stringify(response.json.Customer))
-        })
-        .catch(function (e) {
-          console.log('The error is ' + JSON.stringify(e))
-          reply.send(e)
-        })
-    } catch (err) {
-      reply.send(err)
-    }
-  })
-
-  fastify.patch('/invoice', { schema: updateInvoice }, async function (
-    request,
-    reply
-  ) {
-    try {
-      await request.jwtVerify()
-
-      const oauthClient = await getOAuthClient(settingsCollection)
-
-      const companyID = process.env.INTUIT_REALM_ID
-      const url = process.env.INTUIT_URL
-
-      oauthClient
-        .makeApiCall({
-          url: `https://${url}/v3/company/${companyID}/invoice?minorversion=14`,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: request.body
-        })
-        .then(function (response) {
-          reply.send(response.json)
         })
         .catch(function (e) {
           console.log('The error is ' + JSON.stringify(e))
