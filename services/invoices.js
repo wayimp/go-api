@@ -109,9 +109,14 @@ async function routes (fastify, options) {
         ]
       }
 
-      const result = invoicesCollection.aggregate(pipeline).toArray()
+      const invoices = await invoicesCollection.aggregate(pipeline).toArray()
 
-      return result
+      const numbered = invoices.map((invoice, index) => ({
+        ...invoice,
+        id: index
+      }))
+
+      return numbered
     } catch (err) {
       reply.send(err)
     }
