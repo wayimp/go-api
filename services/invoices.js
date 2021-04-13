@@ -29,61 +29,6 @@ const multiple = {
   }
 }
 
-const pipeline = [
-  {
-    $unwind: {
-      path: '$Line',
-      preserveNullAndEmptyArrays: false
-    }
-  },
-  {
-    $match: {
-      'Line.SalesItemLineDetail.ItemRef.name': {
-        $regex: new RegExp('^Bible')
-      }
-    }
-  },
-  {
-    $group: {
-      _id: '$CustomerRef.name',
-      totalDonations: {
-        $sum: '$TotalAmt'
-      },
-      totalBibles: {
-        $sum: '$Line.SalesItemLineDetail.Qty'
-      },
-      recent: {
-        $max: '$DueDate'
-      },
-      bibles: {
-        $push: '$Line'
-      },
-      customerName: {
-        $max: '$CustomerRef.name'
-      },
-      customerStreet: {
-        $max: '$BillAddr.Line1'
-      },
-      customerCity: {
-        $max: '$BillAddr.City'
-      },
-      customerState: {
-        $max: '$BillAddr.CountrySubDivisionCode'
-      },
-      customerZip: {
-        $max: '$BillAddr.PostalCode'
-      }
-    }
-  },
-  {
-    $sort: {
-      totalDonations: -1
-    }
-  },
-  { $skip: 20 },
-  { $limit: 10 }
-]
-
 async function routes (fastify, options) {
   const jwt = fastify.jwt
   const settingsCollection = fastify.mongo.db.collection('settings')
@@ -91,9 +36,15 @@ async function routes (fastify, options) {
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { query } = request
+
+      const { page } = query
+
+      if (!page) {
+        page = 0
+      }
 
       const findParams = {}
 
@@ -108,6 +59,64 @@ async function routes (fastify, options) {
           { customerEmail: { $regex: query.search, $options: 'i' } }
         ]
       }
+
+      const pipeline = [
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalDonations: {
+              $sum: '$TotalAmt'
+            },
+            totalBibles: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            recent: {
+              $max: '$DueDate'
+            },
+            bibles: {
+              $push: '$Line'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            },
+            customerName: {
+              $max: '$CustomerRef.name'
+            },
+            customerStreet: {
+              $max: '$BillAddr.Line1'
+            },
+            customerCity: {
+              $max: '$BillAddr.City'
+            },
+            customerState: {
+              $max: '$BillAddr.CountrySubDivisionCode'
+            },
+            customerZip: {
+              $max: '$BillAddr.PostalCode'
+            }
+          }
+        },
+        {
+          $sort: {
+            totalDonations: -1
+          }
+        },
+        { $skip: page * 20 },
+        { $limit: 20 }
+      ]
 
       const invoices = await invoicesCollection.aggregate(pipeline).toArray()
 
