@@ -36,27 +36,28 @@ async function routes (fastify, options) {
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      await request.jwtVerify()
+      //await request.jwtVerify()
 
       const { query } = request
 
-      const { page } = query
+      let { page, code, search, field, sort } = query
 
       if (!page) {
         page = 0
       }
 
-      const findParams = {}
+      if (code && code.length > 0) {
+        code = decodeURIComponent(code)
+      }
 
-      if (query.search) {
-        findParams.$or = [
-          { customerName: { $regex: query.search, $options: 'i' } },
-          { customerStreet: { $regex: query.search, $options: 'i' } },
-          { customerCity: { $regex: query.search, $options: 'i' } },
-          { customerState: { $regex: query.search, $options: 'i' } },
-          { customerZip: { $regex: query.search, $options: 'i' } },
-          { customerPhone: { $regex: query.search, $options: 'i' } },
-          { customerEmail: { $regex: query.search, $options: 'i' } }
+      let matchParams = []
+
+      if (search && search.length > 0) {
+        matchParams = [
+          { customerName: { $regex: search, $options: 'i' } },
+          { customerCity: { $regex: search, $options: 'i' } },
+          { customerState: { $regex: search, $options: 'i' } },
+          { customerZip: { $regex: search, $options: 'i' } }
         ]
       }
 
@@ -66,66 +67,101 @@ async function routes (fastify, options) {
             path: '$Line',
             preserveNullAndEmptyArrays: false
           }
-        },
-        {
+        }
+      ]
+
+      if (code && code.length > 0) {
+        pipeline.push({
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': code
+          }
+        })
+      } else {
+        pipeline.push({
           $match: {
             'Line.SalesItemLineDetail.ItemRef.name': {
               $regex: new RegExp('^Bible')
             }
           }
-        },
-        {
-          $group: {
-            _id: '$CustomerRef.name',
-            totalDonations: {
-              $sum: '$TotalAmt'
-            },
-            totalBibles: {
-              $sum: '$Line.SalesItemLineDetail.Qty'
-            },
-            recent: {
-              $max: '$DueDate'
-            },
-            bibles: {
-              $push: '$Line'
-            },
-            customerId: {
-              $max: '$CustomerRef.value'
-            },
-            customerName: {
-              $max: '$CustomerRef.name'
-            },
-            customerStreet: {
-              $max: '$BillAddr.Line1'
-            },
-            customerCity: {
-              $max: '$BillAddr.City'
-            },
-            customerState: {
-              $max: '$BillAddr.CountrySubDivisionCode'
-            },
-            customerZip: {
-              $max: '$BillAddr.PostalCode'
-            }
+        })
+      }
+
+      pipeline.push({
+        $group: {
+          _id: '$CustomerRef.name',
+          totalDonations: {
+            $sum: '$TotalAmt'
+          },
+          totalBibles: {
+            $sum: '$Line.SalesItemLineDetail.Qty'
+          },
+          recent: {
+            $max: '$DueDate'
+          },
+          bibles: {
+            $push: '$Line'
+          },
+          customerId: {
+            $max: '$CustomerRef.value'
+          },
+          customerName: {
+            $max: '$CustomerRef.name'
+          },
+          customerCity: {
+            $max: '$BillAddr.City'
+          },
+          customerState: {
+            $max: '$BillAddr.CountrySubDivisionCode'
+          },
+          customerZip: {
+            $max: '$BillAddr.PostalCode'
           }
-        },
-        {
+        }
+      })
+
+      if (search && search.length > 0) {
+        pipeline.push({
+          $match: {
+            $or: matchParams
+          }
+        })
+      }
+
+      if (field && field.length > 0) {
+        pipeline.push({
+          $sort: {
+            [field]: sort === 'asc' ? 1 : -1
+          }
+        })
+      } else {
+        pipeline.push({
           $sort: {
             totalDonations: -1
           }
-        },
-        { $skip: page * 20 },
-        { $limit: 20 }
-      ]
+        })
+      }
 
-      const invoices = await invoicesCollection.aggregate(pipeline).toArray()
+      pipeline.push({
+        $count: 'customerName'
+      })
 
-      const numbered = invoices.map((invoice, index) => ({
+      const count = await invoicesCollection.aggregate(pipeline).toArray()
+
+      pipeline.pop() // Remove the count stage
+      pipeline.push({ $skip: page * 20 })
+      pipeline.push({ $limit: 20 })
+
+      // console.log(pipeline)
+
+      const result = await invoicesCollection.aggregate(pipeline).toArray()
+
+      const invoices =
+      result.map((invoice, index) => ({
         ...invoice,
         id: index
       }))
 
-      return numbered
+      return { invoices, count: count[0].customerName }
     } catch (err) {
       reply.send(err)
     }
