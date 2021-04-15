@@ -102,7 +102,7 @@ async function routes (fastify, options) {
 
       const result = productsCollection
         .find(findParams)
-        .sort({ order: 1 })
+        .sort({ order: 1, title: 1 })
         .toArray()
 
       return result

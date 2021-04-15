@@ -156,7 +156,7 @@ const invoiceSchema = {
         }
       }
     },
-    DueDate: {
+    TxnDate: {
       type: 'string'
     },
     TotalAmt: {

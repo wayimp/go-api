@@ -96,7 +96,7 @@ async function routes (fastify, options) {
             $sum: '$Line.SalesItemLineDetail.Qty'
           },
           recent: {
-            $max: '$DueDate'
+            $max: '$TxnDate'
           },
           bibles: {
             $push: '$Line'
