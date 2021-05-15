@@ -60,8 +60,6 @@ async function routes (fastify, options) {
       { upsert: true }
     )
 
-    console.log(body)
-
     return updated
   })
 
