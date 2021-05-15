@@ -36,7 +36,7 @@ async function routes (fastify, options) {
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      await request.jwtVerify()
+      //await request.jwtVerify()
 
       const { query } = request
 
@@ -127,6 +127,14 @@ async function routes (fastify, options) {
         })
       }
 
+      pipeline.push({
+        $count: 'customerName'
+      })
+
+      pipeline.pop() // Remove the count stage
+
+      const count = await invoicesCollection.aggregate(pipeline).toArray()
+
       if (field && field.length > 0) {
         pipeline.push({
           $sort: {
@@ -141,22 +149,30 @@ async function routes (fastify, options) {
         })
       }
 
-      pipeline.push({
-        $count: 'customerName'
-      })
-
-      const count = await invoicesCollection.aggregate(pipeline).toArray()
-
-      pipeline.pop() // Remove the count stage
       pipeline.push({ $skip: page * 20 })
       pipeline.push({ $limit: 20 })
 
+      pipeline.push({
+        $lookup: {
+          from: 'contacts',
+          localField: 'customerId',
+          foreignField: 'customerId',
+          as: 'Contacts'
+        }
+      })
+
       // console.log(pipeline)
+
+      // It might max out the memory with the sort
+      /*
+      const result = await invoicesCollection
+        .aggregate(pipeline, { allowDiskUse: true })
+        .toArray()
+      */
 
       const result = await invoicesCollection.aggregate(pipeline).toArray()
 
-      const invoices =
-      result.map((invoice, index) => ({
+      const invoices = result.map((invoice, index) => ({
         ...invoice,
         id: index
       }))
@@ -252,6 +268,81 @@ async function routes (fastify, options) {
           console.log('The error is ' + JSON.stringify(e))
           reply.send(e)
         })
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/monthly', multiple, async (request, reply) => {
+    try {
+      //await request.jwtVerify()
+
+      const { query } = request
+
+      let { page } = query
+
+      if (!page) {
+        page = 0
+      }
+
+      const pipeline = [
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $substr: ['$TxnDate', 0, 7]
+            },
+            totalDonations: {
+              $sum: '$TotalAmt'
+            },
+            totalBibles: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            bibles: {
+              $push: '$Line'
+            },
+            donors: {
+              $addToSet: '$CustomerRef'
+            }
+          }
+        },
+        {
+          $sort: {
+            _id: -1
+          }
+        }
+      ]
+
+      pipeline.push({
+        $count: 'totalDonations'
+      })
+
+      const count = await invoicesCollection.aggregate(pipeline).toArray()
+
+      pipeline.pop() // Remove the count stage
+      pipeline.push({ $skip: page * 20 })
+      pipeline.push({ $limit: 20 })
+
+      const result = await invoicesCollection.aggregate(pipeline).toArray()
+
+      const invoices = result.map((invoice, index) => ({
+        ...invoice,
+        id: index
+      }))
+
+      return { invoices, count: count[0].totalDonations }
     } catch (err) {
       reply.send(err)
     }
