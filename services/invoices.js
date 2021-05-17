@@ -319,7 +319,7 @@ async function routes (fastify, options) {
       const totals = await invoicesCollection.aggregate(pipeline).toArray()
 
       const result = totals.map(t => ({
-        month: t._id,
+        id: t._id,
         total: Number(t.totalDonations).toFixed(0)
       }))
 
@@ -383,7 +383,7 @@ async function routes (fastify, options) {
       const totals = await invoicesCollection.aggregate(pipeline).toArray()
 
       const result = totals.map(t => ({
-        month: t._id,
+        id: t._id,
         total: Number(t.totalBibles)
       }))
 
