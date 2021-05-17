@@ -36,7 +36,7 @@ async function routes (fastify, options) {
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { query } = request
 
@@ -131,9 +131,9 @@ async function routes (fastify, options) {
         $count: 'customerName'
       })
 
-      pipeline.pop() // Remove the count stage
-
       const count = await invoicesCollection.aggregate(pipeline).toArray()
+
+      pipeline.pop() // Remove the count stage
 
       if (field && field.length > 0) {
         pipeline.push({
