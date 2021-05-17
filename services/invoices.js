@@ -287,12 +287,6 @@ async function routes (fastify, options) {
 
       const { query } = request
 
-      let { page } = query
-
-      if (!page) {
-        page = 0
-      }
-
       const pipeline = [
         {
           $unwind: {
@@ -327,6 +321,70 @@ async function routes (fastify, options) {
       const result = totals.map(t => ({
         month: t._id,
         total: Number(t.totalDonations).toFixed(0)
+      }))
+
+      return result
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/bibles', multiple, async (request, reply) => {
+    try {
+      await request.jwtVerify()
+
+      const { query } = request
+
+      let { code } = query
+
+      const pipeline = []
+
+      pipeline.push({
+        $unwind: {
+          path: '$Line',
+          preserveNullAndEmptyArrays: false
+        }
+      })
+
+      if (code && code.length > 0) {
+        code = decodeURIComponent(code)
+        pipeline.push({
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': code
+          }
+        })
+      } else {
+        pipeline.push({
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
+          }
+        })
+      }
+
+      pipeline.push({
+        $group: {
+          _id: {
+            $substr: ['$TxnDate', 0, 7]
+          },
+          totalBibles: {
+            $sum: '$Line.SalesItemLineDetail.Qty'
+          }
+        }
+      })
+
+      pipeline.push({
+        $sort: {
+          _id: 1
+        }
+      })
+
+      const totals = await invoicesCollection.aggregate(pipeline).toArray()
+
+      const result = totals.map(t => ({
+        month: t._id,
+        total: Number(t.totalBibles)
       }))
 
       return result
