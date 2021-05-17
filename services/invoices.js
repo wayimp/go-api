@@ -71,17 +71,25 @@ async function routes (fastify, options) {
       ]
 
       if (code && code.length > 0) {
-        pipeline.push({
-          $match: {
-            'Line.SalesItemLineDetail.ItemRef.name': code
-          }
-        })
+        if (code === 'ANY') {
+          pipeline.push({
+            $match: {
+              'Line.SalesItemLineDetail.ItemRef.name': {
+                $regex: new RegExp('^Bible')
+              }
+            }
+          })
+        } else {
+          pipeline.push({
+            $match: {
+              'Line.SalesItemLineDetail.ItemRef.name': code
+            }
+          })
+        }
       } else {
         pipeline.push({
           $match: {
-            'Line.SalesItemLineDetail.ItemRef.name': {
-              $regex: new RegExp('^Bible')
-            }
+            'Line.DetailType': 'SubTotalLineDetail'
           }
         })
       }
@@ -275,7 +283,7 @@ async function routes (fastify, options) {
 
   fastify.get('/monthly', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { query } = request
 
@@ -294,9 +302,7 @@ async function routes (fastify, options) {
         },
         {
           $match: {
-            'Line.SalesItemLineDetail.ItemRef.name': {
-              $regex: new RegExp('^Bible')
-            }
+            'Line.DetailType': 'SubTotalLineDetail'
           }
         },
         {
@@ -306,43 +312,24 @@ async function routes (fastify, options) {
             },
             totalDonations: {
               $sum: '$TotalAmt'
-            },
-            totalBibles: {
-              $sum: '$Line.SalesItemLineDetail.Qty'
-            },
-            bibles: {
-              $push: '$Line'
-            },
-            donors: {
-              $addToSet: '$CustomerRef'
             }
           }
         },
         {
           $sort: {
-            _id: -1
+            _id: 1
           }
         }
       ]
 
-      pipeline.push({
-        $count: 'totalDonations'
-      })
+      const totals = await invoicesCollection.aggregate(pipeline).toArray()
 
-      const count = await invoicesCollection.aggregate(pipeline).toArray()
-
-      pipeline.pop() // Remove the count stage
-      pipeline.push({ $skip: page * 20 })
-      pipeline.push({ $limit: 20 })
-
-      const result = await invoicesCollection.aggregate(pipeline).toArray()
-
-      const invoices = result.map((invoice, index) => ({
-        ...invoice,
-        id: index
+      const result = totals.map(t => ({
+        month: t._id,
+        total: Number(t.totalDonations).toFixed(0)
       }))
 
-      return { invoices, count: count[0].totalDonations }
+      return result
     } catch (err) {
       reply.send(err)
     }
