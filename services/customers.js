@@ -2,6 +2,7 @@ const customerSchema = require('../schema/customer')
 const { getOAuthClient, getOAuthClientBare } = require('../intuit')
 const OAuthClient = require('intuit-oauth')
 const { validate } = require('../notify')
+const { pdfGen } = require('../pdf/pdfGen')
 
 const updateOne = {
   body: {
@@ -223,6 +224,34 @@ async function routes (fastify, options) {
       reply.send(err)
     }
   })
+
+  fastify.get(
+    '/pdf/:id/:year/:donations/:bibles',
+    multiple,
+    async (request, reply) => {
+      //await request.jwtVerify()
+
+      const { id, year, donations, bibles } = request.params
+
+      const customer = await customersCollection.findOne({
+        Id: id
+      })
+
+      if (!customer) {
+        const err = new Error()
+        err.statusCode = 400
+        err.message = `id: ${id}.`
+        throw err
+      }
+
+      const pdf = pdfGen(customer, year, donations, bibles)
+
+      reply
+        .code(200)
+        .header('Content-Type', 'application/pdf')
+        .send(pdf)
+    }
+  )
 }
 
 module.exports = routes

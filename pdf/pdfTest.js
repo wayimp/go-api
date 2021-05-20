@@ -1,4 +1,7 @@
 const { jsPDF } = require('jspdf')
+const { logo } = require('./logo')
+const { font } = require('./Handwriting-bold')
+const moment = require('moment')
 
 const doc = new jsPDF({
   orientation: 'portrait',
@@ -6,11 +9,55 @@ const doc = new jsPDF({
   format: [8.5, 11]
 })
 
-const logo =
-  'data:image/png;base64,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'
+// add the font to jsPDF
+doc.addFileToVFS('Handwriting-bold.ttf', font)
+doc.addFont('Handwriting-bold.ttf', 'Handwriting', 'bold')
 
-doc.addImage(logo, 'PNG', 0.3, 0.3)
+doc.addImage(logo, 'PNG', 2.8, 0.2)
+doc.setFontSize(10)
+doc.text('Go Therefore Ministries', 3.2, 1.2)
+doc.text('PO Box 2135, Mount Juliet, TN 37121', 3.2, 1.4)
+doc.text('615-773-1963', 3.2, 1.6)
+doc.text('gothereforeministries@gmail.com', 3.2, 1.8)
 
-doc.text('FIELD SERVICE ORDER', 5, 0.5)
+doc.setFontSize(14)
+doc.text('CONTRIBUTION STATEMENT', 2.9, 2.1)
+
+doc.setFontSize(10)
+let pos = 2.7
+doc.text('David Rutherford\n3204 River Rock Pl\nWoodstock, GA 30188', 0.3, pos)
+
+pos += 0.8
+doc.text(new moment().format('MM/DD/YYYY'), 0.3, pos)
+
+pos += 0.5
+doc.text(
+  'According to our records, your total 2021 donations were $175.00.\nThe fair market value of Life Reference Manuals provided was $59.70.\nThe total Tax Deductible portion of your gifts for 2021 is $115.30.',
+  0.3,
+  pos
+)
+
+pos += 0.8
+doc.text(
+  'These Life Reference Manuals have been printed in order to spread the Gospel of Jesus Christ to our neighbors, to people in our\nworkplaces, and to anyone who is in need of encouragement in this lost and hurting world. Go Therefore, Inc. is solely dependent\nupon contributions from individuals, ministries, and corporations like you, and your gifts are greatly appreciated.',
+  0.3,
+  pos
+)
+
+pos += 1.1
+doc.text('Sally Ebel,\nTreasurer\nGo Therefore Ministries', 0.3, pos)
+
+doc.setLineWidth(0.01)
+doc.line(0.3, 10.0, 8.2, 10.0)
+
+doc.text(
+  'In accordance with the Internal Revenue Code Sec 6115 (a), the amount of your contribution that is deductible for\nFederal Income Tax purposes is limited to the amount that is in excess of the fair market value of any goods or services provided\nby Go Therefore, Inc. Please consult your tax advisor regarding the treatment of the remainder of your generous contribution.',
+  0.3,
+  10.2
+)
+
+doc.setFont('Handwriting', 'bold')
+doc.setFontSize(22)
+doc.text('Sally Ebel', 0.6, 5.6)
 
 doc.save('./Completed.pdf')

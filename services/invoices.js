@@ -392,6 +392,138 @@ async function routes (fastify, options) {
       reply.send(err)
     }
   })
+
+  fastify.get('/yearly/:year/:bookValue', multiple, async (request, reply) => {
+    try {
+      //await request.jwtVerify()
+
+      const { year, bookValue } = request.params
+      const { query } = request
+
+      const donationsPipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.DetailType': 'SubTotalLineDetail'
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalDonations: {
+              $sum: '$TotalAmt'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            },
+            customerName: {
+              $max: '$CustomerRef.name'
+            }
+          }
+        },
+        {
+          $sort: {
+            totalDonations: -1
+          }
+        }
+      ]
+
+      const donations = await invoicesCollection
+        .aggregate(donationsPipeline)
+        .toArray()
+
+      const biblesPipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalBibles: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            }
+          }
+        }
+      ]
+
+      const bibles = await invoicesCollection
+        .aggregate(biblesPipeline)
+        .toArray()
+
+      const getTotalBibles = customerId => {
+        const total = bibles.find(b => b.customerId === customerId)
+        return total ? total.totalBibles : 0
+      }
+
+      const totals = donations.map(m => ({
+        ...m,
+        id: m._id,
+        totalBibles: getTotalBibles(m.customerId)
+      }))
+
+      const bibleValue = Number(bookValue)
+
+      // Only send them a letter if they donated more than they received
+      const netDonors = totals.filter(
+        entry => entry.totalDonations > entry.totalBibles * bibleValue
+      )
+
+      /*
+      const netDonorIds = netDonors.map(d => d.customerId)
+
+      const addresses = await customersCollection
+        .find({ Id: { $in: netDonorIds } })
+        .toArray()
+
+      const result = netDonors
+        .map(entry => {
+          const address = addresses.find(f => f.Id === entry.customerId)
+          if (address) {
+            return {
+              ...entry,
+              customerStreet: address.BillAddr.Line1,
+              customerCity: address.BillAddr.City,
+              customerState: address.BillAddr.CountrySubDivisionCode,
+              customerZip: address.BillAddr.PostalCode
+            }
+          }
+        })
+        .filter(noNull => noNull)
+*/
+
+      return netDonors
+    } catch (err) {
+      reply.send(err)
+    }
+  })
 }
 
 module.exports = routes

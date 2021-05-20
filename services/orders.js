@@ -4,7 +4,6 @@ const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const { validate, email, slack } = require('../notify')
 const { uploadBackup } = require('../spaces')
-// const { pdfGen } = require('../pdf/pdfGen')
 
 const updateOne = {
   body: {
