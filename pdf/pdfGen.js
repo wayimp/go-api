@@ -99,7 +99,7 @@ const pdfGen = (customer, year, donations, bibles) => {
   doc.text(
     `According to our records, your total ${year} donations were ${currency.format(
       donations
-    )}.\nThe fair market value of Life Reference Manuals provided was ${currency.format(
+    )}.\nThe fair market value of goods provided was ${currency.format(
       bibles
     )}.\nThe total Tax Deductible portion of your gifts for ${year} is ${currency.format(
       donations - bibles
@@ -110,7 +110,7 @@ const pdfGen = (customer, year, donations, bibles) => {
 
   pos += 0.8
   doc.text(
-    'These Life Reference Manuals have been printed in order to spread the Gospel of Jesus Christ to our neighbors, to people in our\nworkplaces, and to anyone who is in need of encouragement in this lost and hurting world. Go Therefore, Inc. is solely dependent\nupon contributions from individuals, ministries, and corporations like you, and your gifts are greatly appreciated.',
+    'Life Reference Manuals are printed in order to spread the Gospel of Jesus Christ to our neighbors, to people in our workplaces,\nand to anyone who is in need of encouragement in this lost and hurting world. Go Therefore, Inc. is solely dependent upon\ncontributions from individuals, ministries, and corporations like you, and your gifts are greatly appreciated.',
     0.3,
     pos
   )

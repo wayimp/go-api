@@ -33,14 +33,16 @@ async function routes (fastify, options) {
   const jwt = fastify.jwt
   const settingsCollection = fastify.mongo.db.collection('settings')
   const invoicesCollection = fastify.mongo.db.collection('invoices')
+  const contactsCollection = fastify.mongo.db.collection('contacts')
+  const customersCollection = fastify.mongo.db.collection('customers')
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      await request.jwtVerify()
+      //await request.jwtVerify()
 
       const { query } = request
 
-      let { page, code, search, field, sort } = query
+      let { page, code, search, field, sort, status } = query
 
       if (!page) {
         page = 0
@@ -70,6 +72,55 @@ async function routes (fastify, options) {
         }
       ]
 
+      if (status && status.length > 0) {
+        // Find the customers that have this status in their history
+
+        const statusPipeline = [
+          {
+            $unwind: {
+              path: '$timeline',
+              preserveNullAndEmptyArrays: false
+            }
+          }
+        ]
+
+        if (status !== 'Any') {
+          statusPipeline.push({
+            $match: {
+              'timeline.action': status
+            }
+          })
+        }
+
+        statusPipeline.push({
+          $group: {
+            _id: '$customerId'
+          }
+        })
+
+        const contactsWithStatus = await contactsCollection
+          .aggregate(statusPipeline)
+          .toArray()
+
+        if (
+          Array.isArray(contactsWithStatus) &&
+          contactsWithStatus.length > 0
+        ) {
+          const contactIds = contactsWithStatus.map(s => s._id)
+
+          // Now limit the result of the invoices query to these specific clients
+          pipeline.push({
+            $match: {
+              'CustomerRef.value': {
+                $in: contactIds
+              }
+            }
+          })
+
+          console.log(JSON.stringify(pipeline))
+        }
+      }
+
       if (code && code.length > 0) {
         if (code === 'ANY') {
           pipeline.push({
@@ -89,7 +140,9 @@ async function routes (fastify, options) {
       } else {
         pipeline.push({
           $match: {
-            'Line.DetailType': 'SubTotalLineDetail'
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
           }
         })
       }
@@ -97,9 +150,6 @@ async function routes (fastify, options) {
       pipeline.push({
         $group: {
           _id: '$CustomerRef.name',
-          totalDonations: {
-            $sum: '$TotalAmt'
-          },
           totalBibles: {
             $sum: '$Line.SalesItemLineDetail.Qty'
           },
@@ -155,7 +205,7 @@ async function routes (fastify, options) {
       } else {
         pipeline.push({
           $sort: {
-            totalDonations: -1
+            totalBibles: -1
           }
         })
       }
@@ -181,15 +231,58 @@ async function routes (fastify, options) {
         .toArray()
       */
 
-      const result = await invoicesCollection.aggregate(pipeline).toArray()
+      const invoices = await invoicesCollection.aggregate(pipeline).toArray()
 
-      const invoices = result.map((invoice, index) => ({
+      // Do a separate query to get the total donations for these customers
+      const customerIds = invoices.map(i => i.customerId)
+
+      const donationsPipeline = [
+        {
+          $match: {
+            'CustomerRef.value': {
+              $in: customerIds
+            }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.DetailType': 'SubTotalLineDetail'
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.value',
+            totalDonations: {
+              $sum: '$Line.Amount'
+            }
+          }
+        }
+      ]
+
+      //console.log(JSON.stringify(donationsPipeline))
+
+      const donations = await invoicesCollection
+        .aggregate(donationsPipeline)
+        .toArray()
+
+      const result = invoices.map((invoice, index) => ({
         ...invoice,
-        id: index,
+        id: invoice.customerId,
+        totalDonations: donations.find(d => d._id === invoice.customerId)
+          .totalDonations,
         bibles: summarize(invoice.bibles)
       }))
 
-      return { invoices, count: count[0].customerName }
+      return {
+        result,
+        count: count[0] && count[0].customerName ? count[0].customerName : 0
+      }
     } catch (err) {
       reply.send(err)
     }
@@ -299,7 +392,7 @@ async function routes (fastify, options) {
 
   fastify.get('/monthly', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { query } = request
 
@@ -323,7 +416,7 @@ async function routes (fastify, options) {
               $substr: ['$TxnDate', 0, 7]
             },
             totalDonations: {
-              $sum: '$TotalAmt'
+              $sum: '$Line.Amount'
             },
             outstandingBalance: {
               $sum: '$Balance'
@@ -402,7 +495,7 @@ async function routes (fastify, options) {
 
   fastify.get('/yearly/:year/:minimum', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { year, minimum } = request.params
       const { query } = request
@@ -428,7 +521,7 @@ async function routes (fastify, options) {
           $group: {
             _id: '$CustomerRef.name',
             totalDonations: {
-              $sum: '$TotalAmt'
+              $sum: '$Line.Amount'
             },
             customerId: {
               $max: '$CustomerRef.value'
@@ -490,41 +583,228 @@ async function routes (fastify, options) {
         return total ? total.totalBibles : 0
       }
 
+      const coffeePipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('Coffee')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalCoffee: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            }
+          }
+        }
+      ]
+
+      const coffee = await invoicesCollection
+        .aggregate(coffeePipeline)
+        .toArray()
+
+      const getTotalCoffee = customerId => {
+        const ctotal = coffee.find(b => b.customerId === customerId)
+        return ctotal ? ctotal.totalCoffee : 0
+      }
+
       const totals = donations.map(m => ({
         ...m,
         id: m._id,
-        totalBibles: getTotalBibles(m.customerId)
+        totalBibles: getTotalBibles(m.customerId),
+        totalCoffee: getTotalCoffee(m.customerId)
       }))
 
       // Only send them a letter if they donated more than they received
       const netDonors = totals.filter(
-        entry => entry.totalDonations - entry.totalBibles > minimum
+        entry =>
+          entry.totalDonations - (entry.totalBibles + entry.totalCoffee * 6.5) >
+          minimum
       )
 
-      /*
+      return netDonors
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/csv/:year/:minimum', multiple, async (request, reply) => {
+    try {
+      //await request.jwtVerify()
+
+      const { year, minimum } = request.params
+      const { query } = request
+
+      const donationsPipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.DetailType': 'SubTotalLineDetail'
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalDonations: {
+              $sum: '$Line.Amount'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            },
+            customerName: {
+              $max: '$CustomerRef.name'
+            }
+          }
+        },
+        {
+          $sort: {
+            totalDonations: -1
+          }
+        }
+      ]
+
+      const donations = await invoicesCollection
+        .aggregate(donationsPipeline)
+        .toArray()
+
+      const biblesPipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('^Bible')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalBibles: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            }
+          }
+        }
+      ]
+
+      const bibles = await invoicesCollection
+        .aggregate(biblesPipeline)
+        .toArray()
+
+      const getTotalBibles = customerId => {
+        const total = bibles.find(b => b.customerId === customerId)
+        return total ? total.totalBibles : 0
+      }
+
+      const coffeePipeline = [
+        {
+          $match: {
+            TxnDate: { $regex: `^${year}` }
+          }
+        },
+        {
+          $unwind: {
+            path: '$Line',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'Line.SalesItemLineDetail.ItemRef.name': {
+              $regex: new RegExp('Coffee')
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$CustomerRef.name',
+            totalCoffee: {
+              $sum: '$Line.SalesItemLineDetail.Qty'
+            },
+            customerId: {
+              $max: '$CustomerRef.value'
+            }
+          }
+        }
+      ]
+
+      const coffee = await invoicesCollection
+        .aggregate(coffeePipeline)
+        .toArray()
+
+      const getTotalCoffee = customerId => {
+        const ctotal = coffee.find(b => b.customerId === customerId)
+        return ctotal ? ctotal.totalCoffee : 0
+      }
+
+      const totals = donations.map(m => ({
+        ...m,
+        id: m._id,
+        totalBibles: getTotalBibles(m.customerId),
+        totalCoffee: getTotalCoffee(m.customerId)
+      }))
+
+      // Only send them a letter if they donated more than they received
+      const netDonors = totals.filter(
+        entry =>
+          entry.totalDonations - (entry.totalBibles + entry.totalCoffee * 6.5) >
+          minimum
+      )
+
       const netDonorIds = netDonors.map(d => d.customerId)
 
       const addresses = await customersCollection
         .find({ Id: { $in: netDonorIds } })
         .toArray()
 
-      const result = netDonors
+      const donorAddresses = netDonors
         .map(entry => {
           const address = addresses.find(f => f.Id === entry.customerId)
-          if (address) {
-            return {
-              ...entry,
-              customerStreet: address.BillAddr.Line1,
-              customerCity: address.BillAddr.City,
-              customerState: address.BillAddr.CountrySubDivisionCode,
-              customerZip: address.BillAddr.PostalCode
-            }
-          }
+          return address
+            ? `${address.DisplayName},${address.BillAddr.Line1},${address.BillAddr.City},${address.BillAddr.CountrySubDivisionCode},${address.BillAddr.PostalCode}`
+            : null
         })
         .filter(noNull => noNull)
-*/
 
-      return netDonors
+      return donorAddresses.join('\n')
     } catch (err) {
       reply.send(err)
     }

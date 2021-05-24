@@ -32,14 +32,14 @@ doc.text(new moment().format('MM/DD/YYYY'), 0.3, pos)
 
 pos += 0.5
 doc.text(
-  'According to our records, your total 2021 donations were $175.00.\nThe fair market value of Life Reference Manuals provided was $59.70.\nThe total Tax Deductible portion of your gifts for 2021 is $115.30.',
+  'According to our records, your total 2021 donations were $175.00.\nThe fair market value of goods provided was $59.70.\nThe total Tax Deductible portion of your gifts for 2021 is $115.30.',
   0.3,
   pos
 )
 
 pos += 0.8
 doc.text(
-  'These Life Reference Manuals have been printed in order to spread the Gospel of Jesus Christ to our neighbors, to people in our\nworkplaces, and to anyone who is in need of encouragement in this lost and hurting world. Go Therefore, Inc. is solely dependent\nupon contributions from individuals, ministries, and corporations like you, and your gifts are greatly appreciated.',
+  'Life Reference Manuals are printed in order to spread the Gospel of Jesus Christ to our neighbors, to people in our\nworkplaces, and to anyone who is in need of encouragement in this lost and hurting world. Go Therefore, Inc. is solely dependent\nupon contributions from individuals, ministries, and corporations like you, and your gifts are greatly appreciated.',
   0.3,
   pos
 )
