@@ -39,7 +39,7 @@ async function routes (fastify, options) {
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const { query } = request
 
@@ -235,7 +235,7 @@ async function routes (fastify, options) {
         $lookup: {
           from: 'contacts',
           localField: 'customerId',
-          foreignField: '_id',
+          foreignField: 'customerId',
           as: 'Contacts'
         }
       })
