@@ -35,6 +35,7 @@ async function routes (fastify, options) {
   const invoicesCollection = fastify.mongo.db.collection('invoices')
   const contactsCollection = fastify.mongo.db.collection('contacts')
   const customersCollection = fastify.mongo.db.collection('customers')
+  const donationsCollection = fastify.mongo.db.collection('donations')
 
   fastify.get('/invoices', multiple, async (request, reply) => {
     try {
@@ -148,6 +149,22 @@ async function routes (fastify, options) {
       }
 
       pipeline.push({
+        $lookup: {
+          from: 'donations',
+          localField: 'CustomerRef.value',
+          foreignField: '_id',
+          as: 'donations'
+        }
+      })
+
+      pipeline.push({
+        $unwind: {
+          path: '$donations',
+          preserveNullAndEmptyArrays: true
+        }
+      })
+
+      pipeline.push({
         $group: {
           _id: '$CustomerRef.name',
           totalBibles: {
@@ -176,7 +193,8 @@ async function routes (fastify, options) {
           },
           customerZip: {
             $max: '$BillAddr.PostalCode'
-          }
+          },
+          totalDonations: { $max: '$donations.totalDonations' }
         }
       })
 
@@ -205,7 +223,7 @@ async function routes (fastify, options) {
       } else {
         pipeline.push({
           $sort: {
-            totalBibles: -1
+            totalDonations: -1
           }
         })
       }
@@ -217,7 +235,7 @@ async function routes (fastify, options) {
         $lookup: {
           from: 'contacts',
           localField: 'customerId',
-          foreignField: 'customerId',
+          foreignField: '_id',
           as: 'Contacts'
         }
       })
@@ -233,17 +251,28 @@ async function routes (fastify, options) {
 
       const invoices = await invoicesCollection.aggregate(pipeline).toArray()
 
-      // Do a separate query to get the total donations for these customers
-      const customerIds = invoices.map(i => i.customerId)
+      const result = invoices.map((invoice, index) => ({
+        ...invoice,
+        id: invoice.customerId,
+        bibles: summarize(invoice.bibles)
+      }))
+
+      return {
+        result,
+        count: count[0] && count[0].customerName ? count[0].customerName : 0
+      }
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.delete('/donations', multiple, async (request, reply) => {
+    try {
+      await request.jwtVerify()
+
+      await donationsCollection.deleteMany({})
 
       const donationsPipeline = [
-        {
-          $match: {
-            'CustomerRef.value': {
-              $in: customerIds
-            }
-          }
-        },
         {
           $unwind: {
             path: '$Line',
@@ -262,27 +291,17 @@ async function routes (fastify, options) {
               $sum: '$Line.Amount'
             }
           }
+        },
+        {
+          $out: 'donations'
         }
       ]
-
-      //console.log(JSON.stringify(donationsPipeline))
 
       const donations = await invoicesCollection
         .aggregate(donationsPipeline)
         .toArray()
 
-      const result = invoices.map((invoice, index) => ({
-        ...invoice,
-        id: invoice.customerId,
-        totalDonations: donations.find(d => d._id === invoice.customerId)
-          .totalDonations,
-        bibles: summarize(invoice.bibles)
-      }))
-
-      return {
-        result,
-        count: count[0] && count[0].customerName ? count[0].customerName : 0
-      }
+      reply.send(true)
     } catch (err) {
       reply.send(err)
     }
