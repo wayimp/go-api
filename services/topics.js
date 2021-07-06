@@ -2,10 +2,28 @@ const topicSchema = require('../schema/topic')
 const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
+var flatten = require('lodash.flatten')
 
 const updateOne = {
   body: {
     topicSchema
+  }
+}
+
+const updateMany = {
+  body: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        _id: {
+          type: 'string'
+        },
+        order: {
+          type: 'integer'
+        }
+      }
+    }
   }
 }
 
@@ -40,6 +58,28 @@ async function routes (fastify, options) {
   const topicsCollection = fastify.mongo.db.collection('topics')
   const jwt = fastify.jwt
 
+  fastify.patch('/topicOrder', { schema: updateMany }, async function (
+    request,
+    reply
+  ) {
+    //await request.jwtVerify()
+
+    const { body } = request
+
+    console.log(JSON.stringify(body))
+
+    body.map(item => {
+      topicsCollection.updateOne(
+        {
+          _id: ObjectId(item._id)
+        },
+        { $set: { order: item.order } }
+      )
+    })
+
+    return true
+  })
+
   fastify.patch('/topics', { schema: updateOne }, async function (
     request,
     reply
@@ -66,6 +106,21 @@ async function routes (fastify, options) {
   fastify.get('/topics/:id', multiple, async (request, reply) => {
     const result = await topicsCollection.findOne({
       _id: ObjectId(request.params.id)
+    })
+
+    if (!result) {
+      const err = new Error()
+      err.statusCode = 400
+      err.message = `id: ${id}.`
+      throw err
+    }
+
+    return result
+  })
+
+  fastify.get('/topic/:title', multiple, async (request, reply) => {
+    const result = await topicsCollection.findOne({
+      title: decodeURIComponent(request.params.title)
     })
 
     if (!result) {
@@ -139,6 +194,129 @@ async function routes (fastify, options) {
         .toArray()
 
       return result
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/topicTags', multiple, async (request, reply) => {
+    try {
+      const { query } = request
+
+      const findParams = {
+        active: true
+      }
+
+      if (query.showInactive) {
+        delete findParams.active
+      }
+
+      if (query.category) {
+        findParams.category = query.category
+      }
+
+      const pipeline = [
+        {
+          $match: {
+            category: 'topics',
+            active: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$sections',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'sections.version': 'CSB'
+          }
+        },
+        {
+          $project: {
+            'sections.name': 1,
+            'sections.tags': 1
+          }
+        }
+      ]
+
+      const topics = await topicsCollection.aggregate(pipeline).toArray()
+
+      const topicTags = topics.map(topic => {
+        const tags = topic.sections.tags.map(tag => ({
+          tagName: tag,
+          topicName: topic.sections.name,
+          id: topic._id
+        }))
+
+        tags.unshift({
+          tagName: topic.sections.name,
+          topicName: topic.sections.name,
+          id: topic._id
+        })
+
+        return tags
+      })
+
+      const filteredTags = flatten(topicTags).filter(t => t.tagName)
+      return flatten(filteredTags)
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/topicNames', multiple, async (request, reply) => {
+    try {
+      const { query } = request
+
+      const findParams = {
+        active: true
+      }
+
+      if (query.showInactive) {
+        delete findParams.active
+      }
+
+      if (query.category) {
+        findParams.category = query.category
+      }
+
+      const pipeline = [
+        {
+          $match: {
+            category: 'topics',
+            active: true
+          }
+        },
+        {
+          $sort: {
+            order: 1
+          }
+        },
+        {
+          $unwind: {
+            path: '$sections',
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $match: {
+            'sections.version': 'CSB'
+          }
+        },
+        {
+          $project: {
+            'sections.name': 1
+          }
+        }
+      ]
+
+      const result = await topicsCollection.aggregate(pipeline).toArray()
+
+      const topicNames = result.map(t => ({ id: t._id, topicName: t.sections.name }))
+
+      return topicNames
     } catch (err) {
       reply.send(err)
     }
