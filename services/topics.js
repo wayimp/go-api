@@ -187,7 +187,6 @@ async function routes (fastify, options) {
         ])
         .project({
           active: 0,
-          category: 0,
           sections: 0,
           modified: 0
         })
