@@ -229,7 +229,7 @@ async function routes (fastify, options) {
         },
         {
           $match: {
-            'sections.version': 'CSB'
+            'sections.version': 'HCSB'
           }
         },
         {
@@ -269,18 +269,6 @@ async function routes (fastify, options) {
     try {
       const { query } = request
 
-      const findParams = {
-        active: true
-      }
-
-      if (query.showInactive) {
-        delete findParams.active
-      }
-
-      if (query.category) {
-        findParams.category = query.category
-      }
-
       const pipeline = [
         {
           $match: {
@@ -301,7 +289,7 @@ async function routes (fastify, options) {
         },
         {
           $match: {
-            'sections.version': 'CSB'
+            'sections.version': 'HCSB'
           }
         },
         {
@@ -325,10 +313,11 @@ async function routes (fastify, options) {
     request,
     reply
   ) {
-    //await request.jwtVerify()
+    await request.jwtVerify()
 
     const { body } = request
     body.order = Number(body.order)
+    body.active = true
 
     const created = await topicsCollection.insertOne(body)
     created.id = created.ops[0]._id

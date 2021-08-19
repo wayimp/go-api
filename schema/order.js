@@ -35,6 +35,9 @@ const orderSchema = {
     customerEmail: {
       type: 'string'
     },
+    customerCompany: {
+      type: 'string'
+    },
     instructions: {
       type: 'string'
     },

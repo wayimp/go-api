@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f3fec47e-91c1-433c-be12-4cded6a9f0ca",
+		"_postman_id": "24ed6e1f-3b6c-454a-b3d4-85f6c86201f9",
 		"name": "go-api",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -775,12 +775,31 @@
 			"response": []
 		},
 		{
-			"name": "QuickProducts Get Customers",
+			"name": "GetBooks",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "api-key",
+						"value": "abe1c86651b3f72bfdc3ff60319d3b7b",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": ""
+					"raw": "https://api.scripture.api.bible/v1/bibles/a556c5305ee15c3f-01/books",
+					"protocol": "https",
+					"host": [
+						"api",
+						"scripture",
+						"api",
+						"bible"
+					],
+					"path": [
+						"v1",
+						"bibles",
+						"a556c5305ee15c3f-01",
+						"books"
+					]
 				}
 			},
 			"response": []
@@ -809,7 +828,7 @@
 	"variable": [
 		{
 			"key": "url",
-			"value": "http://localhost:8041"
+			"value": "http://localhost:8040"
 		}
 	]
 }
