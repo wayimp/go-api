@@ -271,10 +271,7 @@ async function routes (fastify, options) {
 
       const pipeline = [
         {
-          $match: {
-            category: 'topics',
-            active: true
-          }
+          $match: { active: true }
         },
         {
           $sort: {
@@ -294,6 +291,7 @@ async function routes (fastify, options) {
         },
         {
           $project: {
+            category: 1,
             'sections.name': 1
           }
         }
@@ -301,7 +299,11 @@ async function routes (fastify, options) {
 
       const result = await topicsCollection.aggregate(pipeline).toArray()
 
-      const topicNames = result.map(t => ({ id: t._id, topicName: t.sections.name }))
+      const topicNames = result.map(t => ({
+        id: t._id,
+        category: t.category,
+        topicName: t.sections.name
+      }))
 
       return topicNames
     } catch (err) {
