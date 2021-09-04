@@ -210,14 +210,9 @@ async function routes (fastify, options) {
         delete findParams.active
       }
 
-      if (query.category) {
-        findParams.category = query.category
-      }
-
       const pipeline = [
         {
           $match: {
-            category: 'topics',
             active: true
           }
         },
@@ -249,11 +244,16 @@ async function routes (fastify, options) {
           id: topic._id
         }))
 
-        tags.unshift({
-          tagName: topic.sections.name,
-          topicName: topic.sections.name,
-          id: topic._id
-        })
+        if (topic.sections.name) {
+          const words = topic.sections.name.trim().split(' ')
+          words.map(word => {
+            tags.unshift({
+              tagName: word.replace(/\W/g, ''),
+              topicName: topic.sections.name,
+              id: topic._id
+            })
+          })
+        }
 
         return tags
       })
