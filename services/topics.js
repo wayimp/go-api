@@ -275,6 +275,7 @@ async function routes (fastify, options) {
         },
         {
           $sort: {
+            category: 1,
             order: 1
           }
         },
