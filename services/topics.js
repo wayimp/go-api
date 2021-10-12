@@ -213,7 +213,8 @@ async function routes (fastify, options) {
       const pipeline = [
         {
           $match: {
-            active: true
+            active: true,
+            category: { $ne: 'front' }
           }
         },
         {
