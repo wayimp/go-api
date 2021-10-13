@@ -341,6 +341,26 @@ async function routes (fastify, options) {
       return result
     }
   )
+
+  fastify.get('/category/:name', multiple, async (request, reply) => {
+    try {
+      const { name } = request.params
+
+      const findParams = {
+        active: true,
+        category: name
+      }
+
+      const result = topicsCollection
+        .find(findParams)
+        .sort([['order', 1]])
+        .toArray()
+
+      return result
+    } catch (err) {
+      reply.send(err)
+    }
+  })
 }
 
 module.exports = routes
