@@ -3,6 +3,7 @@ const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 var flatten = require('lodash.flatten')
+const { email } = require('../notify')
 
 const updateOne = {
   body: {
@@ -325,6 +326,27 @@ async function routes (fastify, options) {
 
     const created = await topicsCollection.insertOne(body)
     created.id = created.ops[0]._id
+
+    return created
+  })
+
+  fastify.post('/question', { schema: updateOne }, async function (
+    request,
+    reply
+  ) {
+    const { body } = request
+    body.active = true
+    body.order = 0
+    body.sections = []
+    body.modified = new Date(moment().tz('America/Chicago'))
+    const created = await topicsCollection.insertOne(body)
+    created.id = created.ops[0]._id
+
+    email(
+      settings.notification_emails,
+      `New Question From: ${body.email}`,
+      body.title
+    )
 
     return created
   })
