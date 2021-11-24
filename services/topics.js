@@ -56,6 +56,7 @@ const multiple = {
 }
 
 async function routes (fastify, options) {
+  const settingsCollection = fastify.mongo.db.collection('settings')
   const topicsCollection = fastify.mongo.db.collection('topics')
   const jwt = fastify.jwt
 
@@ -342,9 +343,15 @@ async function routes (fastify, options) {
     const created = await topicsCollection.insertOne(body)
     created.id = created.ops[0]._id
 
+    const settingsArray = await settingsCollection.find({}).toArray()
+    const settings = {}
+    settingsArray.map(setting => {
+      settings[setting.name] = setting.value
+    })
+
     email(
       settings.notification_emails,
-      `New Question From: ${body.email}`,
+      `New Question From: ${body.name} <${body.email}>`,
       body.title
     )
 
