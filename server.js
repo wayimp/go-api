@@ -34,6 +34,7 @@ fastify.register(require('./services/payments'))
 fastify.register(require('./services/contacts'))
 fastify.register(require('./services/topics'))
 fastify.register(require('./services/verses'))
+fastify.register(require('./services/email'))
 
 //fastify.register(require('./plugins/authenticate'))
 
