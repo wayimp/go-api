@@ -63,9 +63,9 @@ const currency = new Intl.NumberFormat('en-US', {
 const pdfGen = (customer, year, donations, bibles) => {
   let address = ''
   if (customer.BillAddr.Line1) {
-    address = `${customer.DisplayName}\n${customer.BillAddr.Line1}\n${customer.BillAddr.City} ${customer.BillAddr.CountrySubDivisionCode}, ${customer.BillAddr.PostalCode}`
+    address = `${customer.DisplayName}\n${customer.BillAddr.Line1}\n${customer.BillAddr.City}\n${customer.BillAddr.CountrySubDivisionCode}, ${customer.BillAddr.PostalCode}`
   } else {
-    address = `${customer.ShipAddr.Line1}\n${customer.ShipAddr.Line2} ${customer.ShipAddr.Line3}`
+    address = `${customer.ShipAddr.Line1}\n${customer.ShipAddr.Line2}\n${customer.ShipAddr.Line3}`
   }
 
   const doc = new jsPDF({

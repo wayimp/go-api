@@ -4,6 +4,7 @@ const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const { validate, email, slack } = require('../notify')
 const { uploadBackup } = require('../spaces')
+const axios = require('axios')
 
 const updateOne = {
   body: {
@@ -74,6 +75,7 @@ async function routes (fastify, options) {
         '[link]',
         link
       )
+      /*
       email(
         customerEmail,
         settings.order_confirmation_subject,
@@ -88,6 +90,30 @@ async function routes (fastify, options) {
         settings.order_notification_subject,
         order_notification_body
       )
+*/
+      if (body.newsletter) {
+        // Add this email to the BenchmarkEmail list
+        // https://clientapi.benchmarkemail.com/Contact/18979047/ContactDetails
+
+        const payload = {
+          Data: {
+            Email: customerEmail,
+            FirstName: body.customerName,
+            EmailPerm: 1
+          }
+        }
+
+        axios({
+          method: 'post',
+          url:
+            'https://clientapi.benchmarkemail.com/Contact/18979047/ContactDetails',
+          data: payload,
+          headers: {
+            AuthToken: 'E664B17F-443B-401C-9576-408C0EE104EB',
+            'Content-Type': 'application/json'
+          }
+        })
+      }
     }
 
     return created

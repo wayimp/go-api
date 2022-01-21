@@ -350,7 +350,7 @@ async function routes (fastify, options) {
     })
 
     email(
-      settings.notification_emails,
+      settings.question_emails,
       `New Question From: ${body.name} <${body.email}>`,
       body.title
     )
