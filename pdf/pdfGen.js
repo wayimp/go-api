@@ -63,7 +63,7 @@ const currency = new Intl.NumberFormat('en-US', {
 const pdfGen = (customer, year, donations, bibles) => {
   let address = ''
   if (customer.BillAddr.Line1) {
-    address = `${customer.DisplayName}\n${customer.BillAddr.Line1}\n${customer.BillAddr.City}\n${customer.BillAddr.CountrySubDivisionCode}, ${customer.BillAddr.PostalCode}`
+    address = `${customer.DisplayName}\n${customer.BillAddr.Line1}\n${customer.BillAddr.City}, ${customer.BillAddr.CountrySubDivisionCode} ${customer.BillAddr.PostalCode}`
   } else {
     address = `${customer.ShipAddr.Line1}\n${customer.ShipAddr.Line2}\n${customer.ShipAddr.Line3}`
   }
@@ -81,7 +81,7 @@ const pdfGen = (customer, year, donations, bibles) => {
   doc.addImage(logo, 'PNG', 2.8, 0.2)
   doc.setFontSize(10)
   doc.text('Go Therefore Ministries', 3.2, 1.2)
-  doc.text('PO Box 2135, Mount Juliet, TN 37121', 3.2, 1.4)
+  doc.text('PO Box 2135, Mount Juliet, TN 37121', 3.2, 1.4)
   doc.text('615-773-1963', 3.2, 1.6)
   doc.text('gothereforeministries@gmail.com', 3.2, 1.8)
 

@@ -75,7 +75,7 @@ async function routes (fastify, options) {
         '[link]',
         link
       )
-      /*
+
       email(
         customerEmail,
         settings.order_confirmation_subject,
@@ -90,7 +90,7 @@ async function routes (fastify, options) {
         settings.order_notification_subject,
         order_notification_body
       )
-*/
+
       if (body.newsletter) {
         // Add this email to the BenchmarkEmail list
         // https://clientapi.benchmarkemail.com/Contact/18979047/ContactDetails
