@@ -165,6 +165,26 @@ async function routes (fastify, options) {
     }
   })
 
+  fastify.get('/featured', multiple, async (request, reply) => {
+    try {
+      const { query } = request
+
+      const findParams = {
+        active: true,
+        featured: true
+      }
+
+      const result = topicsCollection
+        .find(findParams)
+        .sort([['order', 1]])
+        .toArray()
+
+      return result
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
   fastify.get('/topicTitles', multiple, async (request, reply) => {
     try {
       const { query } = request

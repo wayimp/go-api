@@ -5,16 +5,17 @@ const { ObjectId } = require('mongodb')
 async function routes (fastify, options) {
   const metricsCollection = fastify.mongo.db.collection('metrics')
 
-  fastify.get('/metrics/:action/:id', {}, async function (request, reply) {
+  fastify.post('/metrics/:action', {}, async function (request, reply) {
     try {
+      const { body } = request
       const {
-        params: { action, id }
+        params: { action }
       } = request
 
       // Add an entry to the metrics for this topic
       const created = metricsCollection.insertOne({
+        ...body,
         action,
-        id,
         actionDate: new Date(moment().tz('America/Chicago'))
       })
 
@@ -41,7 +42,7 @@ async function routes (fastify, options) {
         },
         {
           $group: {
-            _id: '$id',
+            _id: '$tId',
             count: {
               $sum: 1
             }
@@ -105,7 +106,7 @@ async function routes (fastify, options) {
         },
         {
           $group: {
-            _id: '$id',
+            _id: '$ref',
             count: {
               $sum: 1
             }
@@ -114,6 +115,47 @@ async function routes (fastify, options) {
         {
           $sort: {
             count: -1
+          }
+        }
+      ]
+
+      const summary = await metricsCollection.aggregate(pipeline).toArray()
+
+      return summary
+    } catch (err) {
+      reply.send(err)
+    }
+  })
+
+  fastify.get('/visitActionSummary', {}, async function (request, reply) {
+    try {
+      const pipeline = [
+        {
+          $match: {
+            action: 'visit'
+          }
+        },
+        {
+          $group: {
+            _id: '$ip',
+            count: {
+              $sum: 1
+            },
+            city: {
+              $first: '$city'
+            },
+            country_name: {
+              $first: '$country_name'
+            },
+            latitude: {
+              $first: '$latitude'
+            },
+            longitude: {
+              $first: '$longitude'
+            },
+            region: {
+              $first: '$region'
+            }
           }
         }
       ]
