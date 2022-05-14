@@ -167,6 +167,44 @@ async function routes (fastify, options) {
       reply.send(err)
     }
   })
+
+  fastify.get('/versionActionSummary', {}, async function (
+    request,
+    reply
+  ) {
+    try {
+      const {
+        params: { action }
+      } = request
+
+      const pipeline = [
+        {
+          '$match': {
+            'version': {
+              '$exists': true
+            }
+          }
+        }, {
+          '$group': {
+            '_id': '$version', 
+            'count': {
+              '$sum': 1
+            }
+          }
+        }, {
+          '$sort': {
+            'count': -1
+          }
+        }
+      ]
+
+      const summary = await metricsCollection.aggregate(pipeline).toArray()
+
+      return summary
+    } catch (err) {
+      reply.send(err)
+    }
+  })
 }
 
 module.exports = routes
