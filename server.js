@@ -36,6 +36,7 @@ fastify.register(require('./services/topics'))
 fastify.register(require('./services/verses'))
 fastify.register(require('./services/email'))
 fastify.register(require('./services/metrics'))
+fastify.register(require('./services/stories'))
 
 //fastify.register(require('./plugins/authenticate'))
 

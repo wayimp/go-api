@@ -160,6 +160,17 @@ async function routes (fastify, options) {
 
       const { user, query } = request
 
+      let pageNo = 1
+      let pageSize = 30
+
+      if (query.pageNo) {
+        pageNo = query.pageNo
+      }
+
+      if (query.pageSize) {
+        pageSize = query.pageSize
+      }
+
       const findParams = {
         archived: false
       }
@@ -180,10 +191,31 @@ async function routes (fastify, options) {
         ]
       }
 
-      const result = ordersCollection
-        .find(findParams)
-        .sort([['date', -1]])
-        .toArray()
+      const pipeline = [
+        {
+          $match: findParams
+        },
+        {
+          $addFields: {
+            _created: {
+              $toDate: '$created'
+            }
+          }
+        },
+        {
+          $sort: {
+            _created: -1
+          }
+        },
+        {
+          $skip: (pageNo - 1) * pageSize
+        },
+        {
+          $limit: pageSize
+        }
+      ]
+
+      const result = ordersCollection.aggregate(pipeline).toArray()
 
       return result
     } catch (err) {

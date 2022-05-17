@@ -2,7 +2,7 @@ const moment = require('moment-timezone')
 const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const axios = require('axios')
-const { validate, email, slack } = require('../notify')
+const { validate, email } = require('../notify')
 
 async function routes (fastify, options) {
   const emailCollection = fastify.mongo.db.collection('email')
