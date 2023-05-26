@@ -55,7 +55,7 @@ const multiple = {
   }
 }
 
-async function routes (fastify, options) {
+async function routes(fastify, options) {
   const settingsCollection = fastify.mongo.db.collection('settings')
   const topicsCollection = fastify.mongo.db.collection('topics')
   const jwt = fastify.jwt
@@ -246,12 +246,8 @@ async function routes (fastify, options) {
           }
         },
         {
-          $match: {
-            'sections.version': 'HCSB'
-          }
-        },
-        {
           $project: {
+            'sections.version': 1,
             'sections.name': 1,
             'sections.tags': 1
           }
@@ -263,6 +259,7 @@ async function routes (fastify, options) {
       const topicTags = topics.map(topic => {
         const tags = topic.sections.tags.map(tag => ({
           tagName: tag,
+          version: topic.sections.version,
           topicName: topic.sections.name,
           id: topic._id
         }))
@@ -272,6 +269,7 @@ async function routes (fastify, options) {
           words.map(word => {
             tags.unshift({
               tagName: word.replace(/\W/g, ''),
+              version: topic.sections.version,
               topicName: topic.sections.name,
               id: topic._id
             })
@@ -309,14 +307,10 @@ async function routes (fastify, options) {
           }
         },
         {
-          $match: {
-            'sections.version': 'HCSB'
-          }
-        },
-        {
           $project: {
             category: 1,
-            'sections.name': 1
+            'sections.version': 1,
+            'sections.name': 1,
           }
         }
       ]
@@ -326,6 +320,7 @@ async function routes (fastify, options) {
       const topicNames = result.map(t => ({
         id: t._id,
         category: t.category,
+        version: t.sections.version,
         topicName: t.sections.name
       }))
 
@@ -334,6 +329,7 @@ async function routes (fastify, options) {
       reply.send(err)
     }
   })
+
 
   fastify.post('/topics', { schema: updateOne }, async function (
     request,
