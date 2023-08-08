@@ -3,7 +3,8 @@ FROM node
 COPY package*.json ./
 
 RUN npm install
-RUN npm ci --only=production
+
+RUN npm ci --omit=dev
 
 COPY . .
 
