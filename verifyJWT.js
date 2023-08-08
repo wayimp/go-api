@@ -1,5 +1,5 @@
 function verifyJWT (request, reply, done) {
-  const jwt = require('fastify-jwt')
+  const jwt = require('@fastify/jwt')
 
   if (request.body && request.body.failureWithReply) {
     reply.code(401).send({ error: 'Unauthorized' })

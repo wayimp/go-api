@@ -1,33 +1,34 @@
 const dotenv = require('dotenv')
-const AWS = require('aws-sdk')
 const moment = require('moment')
+const { S3, ListObjectsCommand, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 
-let endpoint,
-  bucket,
+let bucket,
   accessKeyId,
   secretAccessKey = ''
-if (process.env.SPACES_ENDPOINT) {
-  endpoint = process.env.SPACES_ENDPOINT
+
+if (process.env.SPACES_BUCKET) {
   bucket = process.env.SPACES_BUCKET
   accessKeyId = process.env.SPACES_ACCESS_KEY
   secretAccessKey = process.env.SPACES_SECRET_KEY
 } else {
   // Load the config if it has not been done
   const env = dotenv.config()
-  endpoint = env.parsed.SPACES_ENDPOINT
   bucket = env.parsed.SPACES_BUCKET
   accessKeyId = env.parsed.SPACES_ACCESS_KEY
   secretAccessKey = env.parsed.SPACES_SECRET_KEY
 }
 
-const spacesEndpoint = new AWS.Endpoint(endpoint)
-const s3 = new AWS.S3({
-  endpoint,
-  accessKeyId,
-  secretAccessKey
-})
+const s3Client = new S3({
+  forcePathStyle: false, // Configures to use subdomain/virtual calling format.
+  endpoint: "https://nyc3.digitaloceanspaces.com",
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey
+  }
+});
 
-const getFileList = prefix => {
+const getFileList = async prefix => {
   console.log('Listing directory: ' + prefix)
 
   const params = {
@@ -35,60 +36,85 @@ const getFileList = prefix => {
     Prefix: prefix
   }
 
-  var p = new Promise(function (resolve, reject) {
-    s3.listObjects(params, function (err, data) {
-      if (err) {
-        return reject(err)
-      }
-
-      resolve(
-        data.Contents ? data.Contents.map(file => file['Key'].toString()) : []
-      )
-    })
-  })
-
-  return p
+  try {
+    const data = await s3Client.send(new ListObjectsCommand(params));
+    console.log("Success", data);
+    return data;
+  } catch (err) {
+    console.log("Error", err);
+  }
 }
 
-const uploadFile = file => {
-  return new Promise(async (resolve, reject) => {
-    console.log('Uploading file: ' + file.name)
-    var params = {
-      Body: file.data,
-      Bucket: bucket,
-      Key: `up/${file.name}`,
-      ACL: 'public-read'
-    }
-    s3.putObject(params, function (err, data) {
-      if (err) {
-        return reject(err)
-      }
-      resolve()
-    })
-  })
+const getFile = async filename => {
+  console.log('Retriving object: ' + filename)
+
+  const params = {
+    Bucket: bucket,
+    Key: `pro/${filename}`
+  }
+
+  try {
+    const result = await s3Client.send(new GetObjectCommand(params));
+    // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
+    const byteArray = await result.Body.transformToByteArray();
+    return byteArray
+  } catch (err) {
+    console.log("Error", err);
+  }
+}
+
+const uploadFile = async file => {
+  console.log('Uploading file: ' + file.filename)
+  var params = {
+    Body: file._buf,
+    Bucket: bucket,
+    Key: `pro/${file.filename}`,
+    ACL: 'public-read'
+  }
+  try {
+    const data = await s3Client.send(new PutObjectCommand(params));
+    console.log(
+      "Successfully uploaded object: " +
+      params.Bucket +
+      "/" +
+      params.Key
+    );
+    return data;
+  } catch (err) {
+    console.log("Error", err);
+  }
 }
 
 const uploadBackup = backup => {
   return new Promise(async (resolve, reject) => {
     const fileName = new moment().format('YY-MM-DD') + '.json'
 
+    console.log('Uploading file: ' + fileName)
     var params = {
-      Body: JSON.stringify(backup),
+      Body: backup._buf,
       Bucket: bucket,
       Key: `backup/${fileName}`,
-      ACL: 'private'
+      ACL: 'public-read'
     }
-    s3.putObject(params, function (err, data) {
-      if (err) {
-        return reject(err)
-      }
-      resolve()
-    })
+    try {
+      const data = await s3Client.send(new PutObjectCommand(params));
+      console.log(
+        "Successfully uploaded object: " +
+        params.Bucket +
+        "/" +
+        params.Key
+      );
+      return data;
+    } catch (err) {
+      console.log("Error", err);
+    }
   })
 }
+
 
 module.exports = {
   getFileList,
   uploadFile,
-  uploadBackup
+  getFile,
+  uploadBackup,
 }

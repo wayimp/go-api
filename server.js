@@ -4,12 +4,12 @@ const fastify = require('fastify')({
   logger: true
 })
 
-const helmet = require('fastify-helmet')
-const auth = require('fastify-auth')
-const jwt = require('fastify-jwt')
-const fileUpload = require('fastify-file-upload')
+const helmet = require('@fastify/helmet')
+const auth = require('@fastify/auth')
+const jwt = require('@fastify/jwt')
+//const fileUpload = require('fastify-file-upload')
  
-fastify.register(fileUpload)
+//fastify.register(fileUpload)
 
 //const verifyJWT = require('./verifyJWT')
 //const verifyUser = require('./verifyUser')
@@ -17,7 +17,7 @@ fastify.register(fileUpload)
 fastify.register(helmet)
 fastify.register(auth)
 fastify.register(jwt, { secret: 'JauLnD7PhEpvfGOQrZJq' })
-fastify.register(require('fastify-cors'), {
+fastify.register(require('@fastify/cors'), {
   // put your options here
 })
 fastify.register(require('./mongodb'))
@@ -55,11 +55,12 @@ fastify.addHook("onRequest", async (request, reply) => {
 
 const start = async () => {
   try {
-    await fastify.listen(8041, '0.0.0.0')
+    await fastify.listen({ port: 8041, host: '::' })
     fastify.log.info(`server listening on ${fastify.server.address().port}`)
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
   }
 }
+
 start()

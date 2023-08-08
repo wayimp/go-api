@@ -1,7 +1,7 @@
 const fastifyPlugin = require('fastify-plugin')
 
 async function dbConnector (fastify, options) {
-  fastify.register(require('fastify-mongodb'), {
+  fastify.register(require('@fastify/mongodb'), {
     url: process.env.MONGO_CS
   })
 }

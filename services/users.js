@@ -48,7 +48,7 @@ const multiple = {
 async function routes (fastify, options) {
   const usersCollection = fastify.mongo.db.collection('users')
 
-  fastify.post('/token', login, async function (request, reply) {
+  fastify.post('/token', {}, async function (request, reply) {
     const username =
       request.body && request.body.username ? request.body.username : ''
     const password =
