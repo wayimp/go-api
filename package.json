@@ -27,9 +27,7 @@
     "moment-timezone": "^0.5.31",
     "nodemailer": "^6.4.11",
     "stripe": "^8.137.0",
-    "webpack": "^5.64.0"
-  },
-  "devDependencies": {
+    "webpack": "^5.64.0",
     "dotenv": "^8.2.0"
   }
 }
