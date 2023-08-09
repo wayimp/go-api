@@ -50,7 +50,9 @@ async function routes (fastify, options) {
     body.order = Number(body.order)
 
     const created = await productsCollection.insertOne(body)
-    created.id = created.ops[0]._id
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
     return created
   })
@@ -66,7 +68,7 @@ async function routes (fastify, options) {
 
     const updated = await productsCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -77,7 +79,7 @@ async function routes (fastify, options) {
 
   fastify.get('/products/:id', multiple, async (request, reply) => {
     const result = await productsCollection.findOne({
-      _id: ObjectId(request.params.id)
+      _id: new ObjectId(request.params.id)
     })
 
     if (!result) {
@@ -119,7 +121,7 @@ async function routes (fastify, options) {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await productsCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await productsCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     }
   )

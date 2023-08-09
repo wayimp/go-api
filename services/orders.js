@@ -39,7 +39,7 @@ const multiple = {
   }
 }
 
-async function routes (fastify, options) {
+async function routes(fastify, options) {
   const ordersCollection = fastify.mongo.db.collection('orders')
   const settingsCollection = fastify.mongo.db.collection('settings')
   const jwt = fastify.jwt
@@ -60,9 +60,12 @@ async function routes (fastify, options) {
     ]
 
     const created = await ordersCollection.insertOne(body)
-    created.id = created.ops[0]._id
+    console.log(JSON.stringify(created))
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
-    const customerEmail = created.ops[0].customerEmail
+    const customerEmail = created.customerEmail
     if (validate(customerEmail)) {
       const settingsArray = await settingsCollection.find({}).toArray()
       const settings = {}
@@ -130,7 +133,7 @@ async function routes (fastify, options) {
 
     const updated = await ordersCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -141,7 +144,7 @@ async function routes (fastify, options) {
 
   fastify.get('/orders/:id', multiple, async (request, reply) => {
     const result = await ordersCollection.findOne({
-      _id: ObjectId(request.params.id)
+      _id: new ObjectId(request.params.id)
     })
 
     if (!result) {
@@ -231,7 +234,7 @@ async function routes (fastify, options) {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await ordersCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     }
   )

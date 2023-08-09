@@ -92,7 +92,9 @@ async function routes (fastify, options) {
     await request.jwtVerify()
 
     const created = await usersCollection.insertOne(request.body)
-    created.id = created.ops[0]._id
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
     return created
   })
@@ -105,7 +107,7 @@ async function routes (fastify, options) {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await usersCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await usersCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     }
   )

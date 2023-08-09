@@ -55,7 +55,7 @@ async function routes (fastify, options) {
 
     const updated = await blocksCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -66,7 +66,7 @@ async function routes (fastify, options) {
 
   fastify.get('/blocks/:id', multiple, async (request, reply) => {
     const result = await blocksCollection.findOne({
-      _id: ObjectId(request.params.id)
+      _id: new ObjectId(request.params.id)
     })
 
     if (!result) {
@@ -119,7 +119,9 @@ async function routes (fastify, options) {
     body.order = Number(body.order)
 
     const created = await blocksCollection.insertOne(body)
-    created.id = created.ops[0]._id
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
     return created
   })
@@ -132,7 +134,7 @@ async function routes (fastify, options) {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await blocksCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await blocksCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     }
   )

@@ -73,7 +73,7 @@ async function routes(fastify, options) {
     body.map(item => {
       topicsCollection.updateOne(
         {
-          _id: ObjectId(item._id)
+          _id: new ObjectId(item._id)
         },
         { $set: { order: item.order } }
       )
@@ -96,7 +96,7 @@ async function routes(fastify, options) {
 
     const updated = await topicsCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -107,7 +107,7 @@ async function routes(fastify, options) {
 
   fastify.get('/topics/:id', multiple, async (request, reply) => {
     const result = await topicsCollection.findOne({
-      _id: ObjectId(request.params.id)
+      _id: new ObjectId(request.params.id)
     })
 
     if (!result) {
@@ -342,7 +342,9 @@ async function routes(fastify, options) {
     body.active = true
 
     const created = await topicsCollection.insertOne(body)
-    created.id = created.ops[0]._id
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
     return created
   })
@@ -357,7 +359,9 @@ async function routes(fastify, options) {
     body.sections = []
     body.modified = new Date(moment().tz('America/Chicago'))
     const created = await topicsCollection.insertOne(body)
-    created.id = created.ops[0]._id
+    if (created?.insertedId) {
+      created.id = created.insertedId
+    }
 
     const settingsArray = await settingsCollection.find({}).toArray()
     const settings = {}
@@ -382,7 +386,7 @@ async function routes(fastify, options) {
         params: { id }
       } = request
       //await request.jwtVerify()
-      const result = await topicsCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await topicsCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     }
   )

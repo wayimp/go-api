@@ -52,7 +52,7 @@ async function routes (fastify, options) {
 
     const updated = await settingsCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -65,7 +65,7 @@ async function routes (fastify, options) {
     await request.jwtVerify()
 
     const result = await settingsCollection.findOne({
-      _id: ObjectId(request.params.id)
+      _id: new ObjectId(request.params.id)
     })
 
     if (!result) {

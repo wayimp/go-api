@@ -58,7 +58,7 @@ async function routes (fastify, options) {
 
     const updated = await storiesCollection.updateOne(
       {
-        _id: ObjectId(id)
+        _id: new ObjectId(id)
       },
       { $set: body },
       { upsert: true }
@@ -73,7 +73,7 @@ async function routes (fastify, options) {
         params: { id }
       } = request
       await request.jwtVerify()
-      const result = await storiesCollection.deleteOne({ _id: ObjectId(id) })
+      const result = await storiesCollection.deleteOne({ _id: new ObjectId(id) })
       return result
     } catch (err) {
       reply.send(err)

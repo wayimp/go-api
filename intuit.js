@@ -100,7 +100,7 @@ const getOAuthClient = async settingsCollection => {
       accessToken.value = authResponse.access_token
       await settingsCollection.updateOne(
         {
-          _id: ObjectId(accessToken._id)
+          _id: new ObjectId(accessToken._id)
         },
         { $set: accessToken }
       )
@@ -108,7 +108,7 @@ const getOAuthClient = async settingsCollection => {
       refreshToken.value = authResponse.refresh_token
       await settingsCollection.updateOne(
         {
-          _id: ObjectId(refreshToken._id)
+          _id: new ObjectId(refreshToken._id)
         },
         { $set: refreshToken }
       )
