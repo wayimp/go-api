@@ -88,7 +88,7 @@ async function routes(fastify, options) {
   fastify.get('/emails', {}, async (request, reply) => {
     try {
 
-      //await request.jwtVerify()
+      await request.jwtVerify()
 
       const emailRaw = await emailCollection
         .find({})
