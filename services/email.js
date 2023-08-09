@@ -3,8 +3,10 @@ const dateFormat = 'YYYY-MM-DDTHH:mm:SS'
 const { ObjectId } = require('mongodb')
 const axios = require('axios')
 const { validate, email } = require('../notify')
+const Readable = require('stream').Readable
 
 async function routes(fastify, options) {
+  const ordersCollection = fastify.mongo.db.collection('orders')
   const emailCollection = fastify.mongo.db.collection('email')
 
   fastify.post('/signup', {}, async function (request, reply) {
@@ -86,8 +88,8 @@ async function routes(fastify, options) {
   fastify.get('/emails', {}, async (request, reply) => {
     try {
 
-      await request.jwtVerify()
-      
+      //await request.jwtVerify()
+
       const emailRaw = await emailCollection
         .find({})
         .toArray()
@@ -95,12 +97,33 @@ async function routes(fastify, options) {
       const emailCSV = emailRaw
         .map(email => {
           return email
-            ? `${email.firstName ? email.firstName : ''} ${email.lastName ? email.lastName : ''} <${email.email}>`.replace(/\s\s+/g, ' ')
+            ? `${email.firstName ? email.firstName : ''} ${email.lastName ? email.lastName : ''},${email.email}`.replace(/\s\s+/g, ' ')
             : null
         })
         .filter(noNull => noNull)
 
-      return emailCSV.join('\n')
+      const ordersRaw = await ordersCollection
+        .find({
+          'newsletter': true
+        })
+        .toArray()
+
+      const ordersCSV = ordersRaw
+        .map(email => {
+          return email
+            ? `${email.customerName},${email.customerEmail}`.replace(/\s\s+/g, ' ')
+            : null
+        })
+        .filter(noNull => noNull)
+
+      const union = [...new Set([...emailCSV, ...ordersCSV])];
+
+      const stream = new Readable()
+      stream.push(union.join('\n'))    // the string you want
+      stream.push(null)
+
+      return reply.type('text/csv').send(stream)
+
     } catch (err) {
       reply.send(err)
     }
