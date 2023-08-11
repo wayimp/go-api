@@ -376,7 +376,7 @@ async function routes (fastify, options) {
       const companyID = process.env.INTUIT_REALM_ID
       const url = process.env.INTUIT_URL
 
-      oauthClient
+      await oauthClient
         .makeApiCall({
           url: `https://${url}/v3/company/${companyID}/invoice?minorversion=14`,
           method: 'POST',
@@ -386,13 +386,14 @@ async function routes (fastify, options) {
           body: request.body
         })
         .then(function (response) {
-          reply.send(response.json)
+          return reply.send(response.json)
         })
         .catch(function (e) {
           console.log('The error is ' + JSON.stringify(e))
           reply.send(e)
         })
     } catch (err) {
+      console.log(JSON.stringify(err))
       reply.send(err)
     }
   })

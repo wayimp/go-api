@@ -58,7 +58,7 @@ async function routes (fastify, options) {
 
     const callbackId = makeid(10)
 
-    const authUri = oauthClient.authorizeUri({
+    const authUri = await oauthClient.authorizeUri({
       scope: [OAuthClient.scopes.Accounting],
       state: callbackId
     })
@@ -71,7 +71,7 @@ async function routes (fastify, options) {
       const oauthClient = await getOAuthClientBare()
       const { url } = req
 
-      oauthClient.createToken(url).then(function (authResponse) {
+      await oauthClient.createToken(url).then(function (authResponse) {
         const { token } = authResponse
         const { access_token, refresh_token } = token
 
@@ -201,7 +201,7 @@ async function routes (fastify, options) {
         delete newCustomer.PrimaryEmailAddr
       }
 
-      oauthClient
+      await oauthClient
         .makeApiCall({
           url: `https://${url}/v3/company/${companyID}/customer?minorversion=14`,
           method: 'POST',

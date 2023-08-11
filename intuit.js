@@ -25,7 +25,7 @@ const getOAuthUri = async settingsCollection => {
       redirectUri: 'https://api.gothereforeministries.org/callback'
     })
 
-    authUri = oauthClient.authorizeUri({
+    authUri = await oauthClient.authorizeUri({
       scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.Payment],
       state: 'authorizeMe'
     })
